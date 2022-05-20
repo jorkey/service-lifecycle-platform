@@ -11,7 +11,6 @@ import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.mongo._
 import com.vyulabs.update.distribution.task.{Task, TaskManager}
 import org.bson.BsonDocument
-import org.mongodb.scala.bson.BsonNull
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
 
@@ -48,7 +47,7 @@ trait TasksUtils extends SprayJsonSupport {
 
   protected val config: DistributionConfig
 
-  collections.Tasks_Info.update(Filters.eq("terminationStatus", BsonNull),
+  collections.Tasks_Info.update(Filters.eq("terminationStatus", null),
     info => info match {
       case Some(info) => Some(info.copy(terminationTime = Some(new Date()), terminationStatus = Some(false)))
       case None => None

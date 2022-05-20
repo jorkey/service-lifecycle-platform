@@ -199,6 +199,7 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
       Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
     if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
       .expireAfter(0, TimeUnit.SECONDS)) else Future()
+    if (createIndices) collection.createIndex(Indexes.descending("_sequence")) else Future()
     collection
   }, modifiable = false, createIndices = false)
 
