@@ -19,9 +19,7 @@ object LogFormat {
           val logDate = dateFormat.parse(date)
           LogLine(logDate, level, unit, message, None)
         } catch {
-          case _: ParseException =>
-            LogLine(new Date(), "INFO", PLAIN_OUTPUT_UNIT, line, None)
-          case _: NumberFormatException =>
+          case _: Exception =>
             LogLine(new Date(), "INFO", PLAIN_OUTPUT_UNIT, line, None)
         }
       case line =>
