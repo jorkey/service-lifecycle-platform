@@ -204,7 +204,7 @@ trait LogUtils extends SprayJsonSupport {
         unit = line.document.unit,
         message = line.document.message,
         terminationStatus = line.document.terminationStatus))))
-      .buffer(1000, OverflowStrategy.fail)
+      .buffer(10000, OverflowStrategy.fail)
     source.mapMaterializedValue(_ => NotUsed)
   }
 
