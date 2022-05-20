@@ -60,13 +60,15 @@ class SequencedCollection[T: ClassTag](val name: String,
 
   def insert(documents: Seq[T]): Future[Long] = {
     var seq = nextSequence(documents.size) - documents.size + 1
+    for (i <- 0 until documents.size) {
+      val line = Sequenced(seq+i, documents(i))
+      publisherBuffer.push(line)
+      publisherCallback.invoke(line)
+    }
     for {
       collection <- collection
       result <- {
         val docs = documents.map { document =>
-          val line = Sequenced(seq, document)
-          publisherBuffer.push(line)
-          publisherCallback.invoke(line)
           val doc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
           doc.append("_sequence", new BsonInt64(seq)); seq += 1
           if (modifiable) {
