@@ -71,8 +71,8 @@ trait GraphqlWebSocketSupport {
                         GraphqlSchema.SchemaDefinition, context, document, subscribe.payload.operationName,
                         subscribe.payload.variables.getOrElse(JsObject.empty), tracing)
                       for (sink <- sink) {
-                        val killSwitch = Source.combine(querySource
-                          .flatMapConcat(msg => {
+                        val killSwitch = Source.combine(
+                          querySource.flatMapConcat(msg => {
                             Source.single(serializeMessage(Next(id = subscribe.id, payload = msg.asJsObject))) }),
                           Source.single(serializeMessage(Complete(id = subscribe.id))))(Concat(_))
                           .map(msg => {

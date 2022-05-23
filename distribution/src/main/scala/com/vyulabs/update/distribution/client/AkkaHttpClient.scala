@@ -1,6 +1,5 @@
 package com.vyulabs.update.distribution.client
 
-import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
@@ -150,17 +149,18 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
                 val subscribe = response.convertTo[Next]
                 publisherCallback.invoke(request.decodeResponse(subscribe.payload) match {
                   case Left(response) =>
+                    if (log.isDebugEnabled) log.debug(s"Received websocket message: ${response}")
                     response
                   case Right(error) =>
                     throw new IOException(error)
                 })
               case Complete.`type` =>
                 val complete = response.convertTo[Complete]
-                log.debug("Websocket subscription is complete")
+                log.debug(s"Received websocket complete message")
                 system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
               case Error.`type` =>
                 val error = response.convertTo[Error]
-                log.error(s"Websocket subscription error: ${error.payload.message}")
+                log.error(s"Received websocket subscription error: ${error.payload.message}")
                 system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
               case m =>
                 log.error(s"Invalid message: ${m}")

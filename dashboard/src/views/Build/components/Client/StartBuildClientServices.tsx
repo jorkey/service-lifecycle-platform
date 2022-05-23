@@ -96,12 +96,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   const { data: providers } = useProvidersInfoQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    onError(err) { setError('Query providers info error ' + err.message) },
-    onCompleted(providers) {
-      if (providers.providersInfo?.length) {
-        setProvider(providers.providersInfo[0])
-      }
-    }
+    onError(err) { setError('Query providers info error ' + err.message) }
   })
   const { data: clientDesiredVersions, refetch: getClientDesiredVersions } = useClientDesiredVersionsQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work

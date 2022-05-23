@@ -209,7 +209,8 @@ trait LogUtils extends SprayJsonSupport {
   }
 
   def testSubscription()(implicit log: Logger): Source[Action[Nothing, String], NotUsed] = {
-    Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line"))
-      .mapMaterializedValue(_ => NotUsed).take(5)
+    val spaces = new String((0 to 100).map(_ => ' ').toArray)
+    Source.fromIterator(() => (0 to 1000).map(i => Action(spaces + i.toString)).iterator)
+          .mapMaterializedValue(_ => NotUsed)
   }
 }
