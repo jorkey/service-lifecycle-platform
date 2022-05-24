@@ -199,8 +199,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       const services = makeServicesList()
       return services.sort().map(
         service => {
-          const providerVersion = providerDesiredVersions.data?.providerDesiredVersions
-            .find(version => version.service == service)?.version
+          const providerVersion = provider?providerDesiredVersions.data?.providerDesiredVersions
+            .find(version => version.service == service)?.version:undefined
           const developerVersion = developerDesiredVersions.data?.developerDesiredVersions
             .find(version => version.service == service)?.version
           const clientVersion = clientDesiredVersions.clientDesiredVersions

@@ -19,6 +19,7 @@ const useStyles = makeStyles(theme => ({
 const DistributionVersion = () => {
   const classes = useStyles()
 
+  const [ distribution ] = useState(localStorage.getItem('distribution')!)
   const [ clientVersion ] = useState(Version.parseClientDistributionVersion(localStorage.getItem('distributionVersion')!))
   const [ timeout ] = useState<any[1]>([undefined])
 
@@ -58,7 +59,7 @@ const DistributionVersion = () => {
       style={{paddingLeft: '10px', textAlign: 'center'}}
       variant='body2'
     >
-      Server Version: {Version.clientDistributionVersionToString(clientVersion)}
+        Server <span style={{fontStyle: 'italic'}}>{distribution}</span> version {Version.clientDistributionVersionToString(clientVersion)}
     </Typography>:
       <Button
         href='/'
