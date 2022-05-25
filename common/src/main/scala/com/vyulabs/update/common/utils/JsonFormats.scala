@@ -1,7 +1,6 @@
 package com.vyulabs.update.common.utils
 
-import com.vyulabs.update.common.utils.Utils.{parseISO8601Date, serializeISO8601Date}
-import spray.json.{DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, deserializationError}
+import spray.json.{DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
 
 import java.net.{URI, URL}
 import java.util.Date
@@ -26,10 +25,8 @@ object JsonFormats {
   }
 
   implicit object DateJsonFormat extends RootJsonFormat[Date] {
-    def write(value: Date) = JsString(serializeISO8601Date(value))
-    def read(value: JsValue) = parseISO8601Date(value.asInstanceOf[JsString].value).getOrElse {
-      deserializationError(s"Parse date error. Value is ${value}")
-    }
+    def write(value: Date) = JsNumber(value.getTime)
+    def read(value: JsValue) = new Date(value.asInstanceOf[JsNumber].value.longValue())
   }
 
   implicit object FiniteDurationFormat extends RootJsonFormat[FiniteDuration] {

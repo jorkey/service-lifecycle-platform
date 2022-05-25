@@ -24,14 +24,16 @@ object GraphqlTypes {
   }
 
   implicit val DateType = ScalarType[Date]("Date",
-    coerceOutput = (date, _) => date,
+    coerceOutput = (date, _) => date.getTime,
     coerceInput = {
       case ast.BigIntValue(value, _, _) => Right(new Date(value.longValue()))
-      case _ => Left(DateCoerceViolation)
+      case _ => Left(VersionViolation)
     },
     coerceUserInput = {
-      case value: Long => Right(new Date(value.longValue()))
-      case _ => Left(DateCoerceViolation)
+      case i: Long => Right(new Date(i))
+      case i: BigInt => Right(new Date(i.longValue()))
+      case d: BigDecimal if d.isWhole => Right(new Date(d.longValue()))
+      case _ => Left(VersionViolation)
     })
 
   implicit val BigintType = ScalarType[BigInt]("BigInt",
