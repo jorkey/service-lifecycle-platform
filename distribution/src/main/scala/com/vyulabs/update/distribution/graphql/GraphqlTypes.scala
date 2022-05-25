@@ -4,8 +4,6 @@ import com.vyulabs.update.common.accounts._
 import com.vyulabs.update.common.config.{BuildServiceConfig, GitConfig, NamedStringValue, Repository}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
-import com.vyulabs.update.common.utils.Utils
-import com.vyulabs.update.common.utils.Utils.serializeISO8601Date
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.graphql.utils.{SequencedTaskInfo, TaskParameter}
 import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
@@ -26,14 +24,16 @@ object GraphqlTypes {
   }
 
   implicit val DateType = ScalarType[Date]("Date",
-    coerceOutput = (date, _) => serializeISO8601Date(date),
+    coerceOutput = (date, _) => date.getTime,
     coerceInput = {
-      case StringValue(value, _, _, _, _) => Utils.parseISO8601Date(value).toRight(DateCoerceViolation)
-      case _ => Left(DateCoerceViolation)
+      case ast.BigIntValue(value, _, _) => Right(new Date(value.longValue()))
+      case _ => Left(VersionViolation)
     },
     coerceUserInput = {
-      case value: String => Utils.parseISO8601Date(value).toRight(DateCoerceViolation)
-      case _ => Left(DateCoerceViolation)
+      case i: Long => Right(new Date(i))
+      case i: BigInt => Right(new Date(i.longValue()))
+      case d: BigDecimal if d.isWhole => Right(new Date(d.longValue()))
+      case _ => Left(VersionViolation)
     })
 
   implicit val BigintType = ScalarType[BigInt]("BigInt",
