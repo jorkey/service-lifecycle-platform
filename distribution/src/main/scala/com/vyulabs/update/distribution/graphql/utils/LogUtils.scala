@@ -191,7 +191,6 @@ trait LogUtils extends SprayJsonSupport {
       .filter(log => levels.isEmpty || levels.get.contains(log.document.level))
       .filter(log => unit.isEmpty || unit.contains(log.document.unit))
       .filter(log => find.isEmpty || log.document.message.toLowerCase().contains(find.get.toLowerCase))
-      .filter(!_.document.message.startsWith("Received websocket message:")) // TODO remove
       .groupedWeightedWithin(100, FiniteDuration.apply(500, TimeUnit.MILLISECONDS))(_ => 1)
       .map(lines => Action(lines.map(line => SequencedServiceLogLine(
         sequence = line.sequence,

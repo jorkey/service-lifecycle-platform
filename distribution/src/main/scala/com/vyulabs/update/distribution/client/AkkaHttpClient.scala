@@ -149,7 +149,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
                 val subscribe = response.convertTo[Next]
                 publisherCallback.invoke(request.decodeResponse(subscribe.payload) match {
                   case Left(response) =>
-                    if (log.isDebugEnabled) log.debug(s"Received websocket message: ${response}")
+//                    if (log.isDebugEnabled) log.debug(s"Received websocket message: ${response}")
                     response
                   case Right(error) =>
                     throw new IOException(error)

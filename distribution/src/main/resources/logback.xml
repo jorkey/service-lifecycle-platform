@@ -24,7 +24,7 @@
     <logger name="akka.http" level="INFO"/>
     <logger name="org.mongodb" level="ERROR"/>
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="FILE" />
         <appender-ref ref="TRACE" />
     </root>
