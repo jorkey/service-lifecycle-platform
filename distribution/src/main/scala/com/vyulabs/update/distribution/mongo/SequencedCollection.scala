@@ -17,7 +17,7 @@ import org.slf4j.Logger
 
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
@@ -170,10 +170,12 @@ class SequencedCollection[T: ClassTag](val name: String,
                   for {
                     _ <- collection.updateOne(Filters.eq("_sequence", docId),
                       Updates.combine(Updates.set("_replacedBy", new BsonInt64(sequence)),
-                        Updates.set("_archiveTime", new BsonDateTime(System.currentTimeMillis()))))
+                        Updates.set("_archiveTime", new BsonDateTime(
+                          System.currentTimeMillis() - FiniteDuration(historyExpireDays, TimeUnit.DAYS).toMillis + 60000))))
                     result <- insert(collection, document, sequence).map(_ => 1)
                     _ <- collection.updateOne(Filters.eq("_sequence", docId),
-                      Updates.unset("_replacedBy"))
+                      Updates.combine(Updates.unset("_replacedBy"),
+                        Updates.set("_archiveTime", new BsonDateTime(System.currentTimeMillis()))))
                   } yield result
                 case None =>
                   Future(0)
@@ -258,7 +260,7 @@ class SequencedCollection[T: ClassTag](val name: String,
       val bufferSource = Source.fromIterator(() => bufferIterator) // Makes up for the lack of newly arrived documents
       var sequence = from.getOrElse(0L)
       Source.combine(documentsSource, bufferSource, publisherSource)(Concat(_))
-        .buffer(1000, OverflowStrategy.fail)
+        .buffer(10000, OverflowStrategy.fail)
         .filter(doc => {
           if (doc.sequence >= sequence) {
             sequence = doc.sequence + 1

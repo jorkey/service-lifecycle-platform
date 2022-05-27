@@ -278,7 +278,7 @@ function runService {
       fi
       command="/usr/bin/java"
       if [ ${serviceToRun} == "distribution" ]; then
-        args="-jar -XX:+UseG1GC -Xss16M -Xms512M -Xmx1G -XX:+HeapDumpOnOutOfMemoryError ${serviceToRun}-${developerVersion}.jar"
+        args="-jar -XX:+UseG1GC -Xss16M -Xms512M -Xmx512M -XX:+HeapDumpOnOutOfMemoryError ${serviceToRun}-${developerVersion}.jar"
       elif [ ${serviceToRun} == "updater" ]; then
         args="-jar -Xms128M -Xmx128M ${serviceToRun}-${developerVersion}.jar"
       else

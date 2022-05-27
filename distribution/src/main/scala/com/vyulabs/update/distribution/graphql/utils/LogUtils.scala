@@ -187,7 +187,7 @@ trait LogUtils extends SprayJsonSupport {
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
       .filter(log => process.isEmpty || process.contains(log.document.process))
       .filter(log => task.isEmpty || task == log.document.task)
-      .takeWhile(!_.document.terminationStatus.isDefined, true)
+      .takeWhile(log => task.isEmpty || !log.document.terminationStatus.isDefined, true)
       .filter(log => levels.isEmpty || levels.get.contains(log.document.level))
       .filter(log => unit.isEmpty || unit.contains(log.document.unit))
       .filter(log => find.isEmpty || log.document.message.toLowerCase().contains(find.get.toLowerCase))

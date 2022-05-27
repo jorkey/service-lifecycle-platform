@@ -98,7 +98,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     val installCommands = Seq(CommandConfig("chmod", Some(Seq("+x", "runScript.sh")), None, None, None, None))
     val writeLogs = WriteLogsConfig("log", "test", 1, 10)
     val installConfig = InstallConfig(Some(installCommands), None, Some(RunServiceConfig("/bin/bash", Some(Seq("-c", "./runScript.sh")),
-      None, Some(writeLogs), Some(false), None, None, None)))
+      None, Some(writeLogs), Some(true), None, None, None)))
     val updateConfig = UpdateConfig(Map.empty + (testServiceName -> ServiceUpdateConfig(buildConfig, Some(installConfig))))
     val configFile = new File(testServiceSourcesDir, Common.UpdateConfigFileName)
     if (!IoUtils.writeJsonToFile(configFile, updateConfig)) {
@@ -108,7 +108,8 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
       sys.error(s"Can't add update config file to repository changes")
     }
     val scriptFile = new File(testServiceSourcesDir, "sourceScript.sh")
-    val scriptContent = "echo \"Executed version %%version%%\"" + (if (!buggy) "\nsleep 10000" else "")
+    val scriptContent = "echo \"Executed version %%version%%\"; " +
+      (if (!buggy) "n=0; while [[ $n -lt 300 ]]; do echo 'output line '$n; sleep 1; n=$((n+1)); done" else "")
     if (!IoUtils.writeBytesToFile(scriptFile, scriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
     }

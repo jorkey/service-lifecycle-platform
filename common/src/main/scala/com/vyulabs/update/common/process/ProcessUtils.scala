@@ -131,7 +131,7 @@ object ProcessUtils {
       lines => {
         lines.foreach { case (data, nl) =>
           if (logging != Logging.None) {
-            log.error(data)
+            log.warn(data)
           }
           output.append(data)
           if (nl) {

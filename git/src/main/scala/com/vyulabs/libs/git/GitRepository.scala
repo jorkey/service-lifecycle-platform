@@ -1,15 +1,14 @@
 package com.vyulabs.libs.git
 
 import com.vyulabs.update.common.utils.IoUtils
-import org.eclipse.jgit.api.{Git, TransportConfigCallback}
+import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand.ListMode
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.lib.SubmoduleConfig.FetchRecurseSubmodulesMode
 import org.eclipse.jgit.revwalk.RevCommit
-import org.eclipse.jgit.storage.pack.PackConfig
 import org.eclipse.jgit.submodule.SubmoduleStatus
-import org.eclipse.jgit.transport.{RefSpec, Transport}
+import org.eclipse.jgit.transport.{RefSpec, TagOpt}
 import org.slf4j.Logger
 
 import java.io.File

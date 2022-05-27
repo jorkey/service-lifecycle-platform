@@ -159,23 +159,25 @@ class WebSocketLink extends ApolloLink {
         {
           next: sink.next.bind(sink),
           complete: sink.complete.bind(sink),
-          error: (err: any) => {
-            if (err instanceof Error) {
-              return sink.error(err);
+          error: (error: any) => {
+            console.log('WebSocket error ' + error)
+
+            if (error instanceof Error) {
+              return sink.error(error);
             }
 
-            if (err instanceof CloseEvent) {
+            if (error instanceof CloseEvent) {
               return sink.error(
                 // reason will be available on clean closes
                 new Error(
-                  `Socket closed with event ${err.code} ${err.reason || ''}`,
+                  `Socket closed with event ${error.code} ${error.reason || ''}`,
                 ),
               );
             }
 
             return sink.error(
               new Error(
-                (err as GraphQLError[])
+                (error as GraphQLError[])
                   .map(({ message }) => message)
                   .join(', '),
               ),
@@ -189,9 +191,32 @@ class WebSocketLink extends ApolloLink {
 
 const development = process.env.NODE_ENV === 'development';
 
+// @ts-ignore
+let wsSocket, wsTimeout;
+
 const wsLink = new WebSocketLink({
   url: (window.location.protocol=='https:'?'wss':'ws') +
     `://${development?'localhost:8000':window.location.host}/graphql/websocket`,
+  keepAlive: 10_000,
+  on: {
+    connected: (socket) => (wsSocket = socket),
+    ping: (received) => {
+      if (!received) // sent
+        wsTimeout = setTimeout(() => {
+          // @ts-ignore
+          if (wsSocket.readyState === WebSocket.OPEN) {
+            console.log('Ping request timeout - close socket')
+            // @ts-ignore
+            wsSocket.close(4408, 'Ping request timeout');
+          }
+        }, 5_000); // wait 5 seconds for the pong and then close the connection
+    },
+    pong: (received) => {
+      if (received) { // @ts-ignore
+        clearTimeout(wsTimeout);
+      }
+    },
+  },
   connectionParams: () => {
     const token = localStorage.getItem('accessToken')
     return {
