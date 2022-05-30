@@ -6,6 +6,8 @@ import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpCl
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperVersion}
+import org.eclipse.jgit.transport.SshSessionFactory
+import org.eclipse.jgit.transport.sshd.{DefaultProxyDataFactory, JGitKeyCache, SshdSessionFactory}
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 import spray.json._
@@ -40,6 +42,9 @@ object BuilderMain extends App {
     "  lastCommitComment service=? [sourceRepositories=?]"
 
   if (args.size < 1) Utils.error(usage())
+
+  val sshFactory = new SshdSessionFactory(new JGitKeyCache, new DefaultProxyDataFactory)
+  SshSessionFactory.setInstance(sshFactory)
 
   try {
     val command = args(0)

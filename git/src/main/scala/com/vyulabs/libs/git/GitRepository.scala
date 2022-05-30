@@ -8,8 +8,7 @@ import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.lib.SubmoduleConfig.FetchRecurseSubmodulesMode
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.submodule.SubmoduleStatus
-import org.eclipse.jgit.transport.{RefSpec, SshSessionFactory}
-import org.eclipse.jgit.transport.sshd.{DefaultProxyDataFactory, JGitKeyCache, SshdSessionFactory}
+import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
 import java.io.File
@@ -21,11 +20,6 @@ import scala.collection.JavaConverters._
   * Copyright FanDate, Inc.
   */
 class GitRepository(git: Git)(implicit log: Logger) {
-  {
-    val sshFactory = new SshdSessionFactory(new JGitKeyCache, new DefaultProxyDataFactory)
-    SshSessionFactory.setInstance(sshFactory)
-  }
-
   def getUrl(): String ={
     val url = git.getRepository.getConfig().getString("remote", "origin", "url")
     if (url != null) {
