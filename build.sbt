@@ -83,8 +83,7 @@ lazy val gitLib = project
     libraryDependencies ++= baseDependencies ++ Seq(
       dependencies.jGit,
       dependencies.jGitApacheSsh,
-      dependencies.apacheSshd,
-      dependencies.bouncyCastle
+      dependencies.apacheSshd
     )
   )
   .dependsOn(
@@ -160,7 +159,6 @@ lazy val dependencies =
     val jGit = "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r"
     val jGitApacheSsh = "org.eclipse.jgit" % "org.eclipse.jgit.ssh.apache.agent" % "6.1.0.202203080745-r"
     val apacheSshd = "org.apache.sshd" % "sshd-core" % "2.8.0"
-    val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % "1.70"
 
     // MongoDB
     val mongoDbDriver = "org.mongodb" % "mongodb-driver-reactivestreams" % "1.13.1"
