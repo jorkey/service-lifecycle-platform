@@ -81,7 +81,9 @@ lazy val gitLib = project
   .in(file("git"))
   .settings(
     libraryDependencies ++= baseDependencies ++ Seq(
-      dependencies.jGit
+      dependencies.jGit,
+      dependencies.jGitApacheSsh,
+      dependencies.apacheSshd
     )
   )
   .dependsOn(
@@ -154,7 +156,9 @@ lazy val dependencies =
     val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
 
     // Misc
-    val jGit = "org.eclipse.jgit" % "org.eclipse.jgit" % "5.6.1.202002131546-r"
+    val jGit = "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r"
+    val jGitApacheSsh = "org.eclipse.jgit" % "org.eclipse.jgit.ssh.apache.agent" % "6.1.0.202203080745-r"
+    val apacheSshd = "org.apache.sshd" % "sshd-core" % "2.8.0"
 
     // MongoDB
     val mongoDbDriver = "org.mongodb" % "mongodb-driver-reactivestreams" % "1.13.1"

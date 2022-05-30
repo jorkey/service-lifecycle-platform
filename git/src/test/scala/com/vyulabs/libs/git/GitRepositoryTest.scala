@@ -16,12 +16,6 @@ class GitRepositoryTest extends FlatSpec with Matchers {
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  it should "clone repository" in {
-    val dir = Files.createTempDirectory("dir")
-    val rep = GitRepository.cloneRepository("ssh://git@bitbucket.org/vyulabs/webrtc.git", "master",
-      dir.toFile, false).getOrElse(throw new IOException("Can't create Git repository"))
-  }
-
   it should "work with submodules" in {
     println("*** Create submodules repositories")
 
