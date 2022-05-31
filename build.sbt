@@ -186,6 +186,7 @@ lazy val assemblySettings = Seq(
         MergeStrategy.discard
       }
     }
+    case PathList(".cache") => MergeStrategy.discard // Apache MINA sshd
     case _ => MergeStrategy.first
   }
 )
