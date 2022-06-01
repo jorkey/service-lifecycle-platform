@@ -272,18 +272,7 @@ function runService {
         >&2 echo "runService.args is not defined in the install.json"
       fi
     else
-      if [ ! -f ${serviceToRun}-${developerVersion}.jar ]; then
-        >&2 echo "No <${serviceToRun}-${developerVersion}>.jar in the build"
-        exit 1
-      fi
-      command="/usr/bin/java"
-      if [ ${serviceToRun} == "distribution" ]; then
-        args="-jar -XX:+UseG1GC -Xss16M -Xms512M -Xmx512M -XX:+HeapDumpOnOutOfMemoryError ${serviceToRun}-${developerVersion}.jar"
-      elif [ ${serviceToRun} == "updater" ]; then
-        args="-jar -Xms128M -Xmx128M ${serviceToRun}-${developerVersion}.jar"
-      else
-        args="-jar ${serviceToRun}-${developerVersion}.jar"
-      fi
+      >&2 echo "No install.json"
     fi
 
     if tty -s; then

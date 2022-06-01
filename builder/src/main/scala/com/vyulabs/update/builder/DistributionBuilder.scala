@@ -353,7 +353,6 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
       return false
     }
 
-
     log.info(s"--------------------------- Make distribution config")
     var substitutions = s""".distribution="${distribution}" | .title="${title}"""" +
       s""" | .mongoDb.connection="${dbConfig.connection}" | .mongoDb.name="${dbConfig.name}""""

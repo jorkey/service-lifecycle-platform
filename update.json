@@ -57,31 +57,22 @@
         {
           "sourceFile": "target/builder-%%version%%.jar",
           "destinationFile": "builder-%%version%%.jar"
+        },
+        {
+          "sourceFile": "target/sshd-core-2.8.0.jar",
+          "destinationFile": "sshd-core-2.8.0.jar"
         }
       ]
-    }
-  },
-  {
-    "service": "installer",
-    "build": {
-      "buildCommands": [
-        {
-          "command": "sbt",
-          "args": [
-            "set version in installer := \"%%version%%\"",
-            "set assemblyOutputPath in assembly in installer := new File(\"target/installer-%%version%%.jar\")",
-            "set test in assembly in installer := {}",
-            "installer/assembly"],
-          "exitCode": 0,
-          "outputMatch": "(?s).*\\[success\\].*"
-        }
-      ],
-      "copyFiles": [
-        {
-          "sourceFile": "target/installer-%%version%%.jar",
-          "destinationFile": "installer-%%version%%.jar"
-        }
-      ]
+    },
+    "install": {
+      "runService": {
+        "command": "/usr/bin/java",
+        "args": [
+          "-classpath",
+          "builder-provider-1.0.0.jar:sshd-core-2.8.0.jar",
+          "com.vyulabs.update.builder.BuilderMain"
+        ]
+      }
     }
   },
   {
@@ -105,6 +96,17 @@
           "destinationFile": "updater-%%version%%.jar"
         }
       ]
+    },
+    "install": {
+      "runService": {
+        "command": "/usr/bin/java",
+        "args": [
+          "-Xms128M",
+          "-Xmx128M",
+          "-jar",
+          "updater-%%version%%.jar"
+        ]
+      }
     }
   },
   {
@@ -128,6 +130,20 @@
           "destinationFile": "distribution-%%version%%.jar"
         }
       ]
+    },
+    "install": {
+      "runService": {
+        "command": "/usr/bin/java",
+        "args": [
+          "-XX:+UseG1GC",
+          "-Xss16M",
+          "-Xms512M",
+          "-Xmx512M",
+          "-XX:+HeapDumpOnOutOfMemoryError",
+          "-jar",
+          "distribution-%%version%%.jar"
+        ]
+      }
     }
   }
 ]}

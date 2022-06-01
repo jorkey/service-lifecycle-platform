@@ -1,5 +1,6 @@
 import sbt.project
 
+import java.nio.file.{Files, StandardCopyOption}
 import scala.sys.process.Process
 
 name := "update"
@@ -179,15 +180,21 @@ lazy val dependencies =
 lazy val assemblySettings = Seq(
   assemblyMergeStrategy in assembly := {
     case PathList("reference.conf") => MergeStrategy.concat // Akka configuration file
-    case PathList("META-INF", xs@_*) => { // Extract native libraries
-      if (!xs.isEmpty && xs(0) == "native") {
-        MergeStrategy.concat
-      } else {
-        MergeStrategy.discard
-      }
-    }
-    case PathList(".cache", _@_*) => MergeStrategy.discard // Apache MINA sshd
+    case PathList("META-INF", _@_*) => MergeStrategy.discard
     case _ => MergeStrategy.first
+  },
+  assemblyExcludedJars in assembly := {
+    val classPath = (fullClasspath in assembly).value
+    val path = (assemblyOutputPath in assembly).value.getParentFile
+    classPath filter { file =>
+      val skip = file.data.getName.contains("sshd") && !file.data.getName.contains("sshd-common")
+      if (skip && file.data.getName.contains("sshd-core")) {
+        Files.copy(file.data.toPath,
+          new File(path, file.data.getName).toPath,
+          StandardCopyOption.REPLACE_EXISTING)
+      }
+      skip
+    }
   }
 )
 
