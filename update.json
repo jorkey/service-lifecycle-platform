@@ -61,6 +61,10 @@
         {
           "sourceFile": "target/sshd-core-2.8.0.jar",
           "destinationFile": "sshd-core-2.8.0.jar"
+        },
+        {
+          "sourceFile": "target/sshd-common-2.8.0.jar",
+          "destinationFile": "sshd-common-2.8.0.jar"
         }
       ]
     },
