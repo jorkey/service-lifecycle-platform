@@ -69,7 +69,7 @@
         "command": "/usr/bin/java",
         "args": [
           "-classpath",
-          "builder-%%version%%.jar:sshd-core-2.8.0.jar",
+          "builder-%%version%%.jar:sshd-core-2.8.0.jar:sshd-common-2.8.0.jar",
           "com.vyulabs.update.builder.BuilderMain"
         ]
       }
