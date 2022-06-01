@@ -187,12 +187,12 @@ lazy val assemblySettings = Seq(
     val classPath = (fullClasspath in assembly).value
     val path = (assemblyOutputPath in assembly).value.getParentFile
     classPath filter { file =>
-      if (file.data.getName.contains("sshd-core") || file.data.getName.contains("sshd-common")) {
+      if (file.data.getName.contains("ssh.apache-") || file.data.getName.contains("sshd-core") || file.data.getName.contains("sshd-common")) {
         Files.copy(file.data.toPath,
           new File(path, file.data.getName).toPath,
           StandardCopyOption.REPLACE_EXISTING)
       }
-      file.data.getName.contains("sshd")
+      file.data.getName.contains("ssh")
     }
   }
 )
