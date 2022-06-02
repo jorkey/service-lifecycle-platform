@@ -136,42 +136,47 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
         .run()
     val id = Random.nextInt().toString
     val connectionAcked = Promise[Unit]()
+    def processMessage(message: String): Unit = {
+      val response = message.parseJson.asJsObject
+      val responseType = response.fields.get("type").map(_.asInstanceOf[JsString].value).getOrElse("unknown")
+      responseType match {
+        case ConnectionAck.`type` =>
+          connectionAcked.success()
+        case Next.`type` =>
+          val subscribe = response.convertTo[Next]
+          publisherCallback.invoke(request.decodeResponse(subscribe.payload) match {
+            case Left(response) =>
+              //                    if (log.isDebugEnabled) log.debug(s"Received websocket message: ${response}")
+              response
+            case Right(error) =>
+              throw new IOException(error)
+          })
+        case Complete.`type` =>
+          val complete = response.convertTo[Complete]
+          log.debug(s"Received websocket complete message")
+          system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
+        case Error.`type` =>
+          val error = response.convertTo[Error]
+          log.error(s"Received websocket subscription error: ${error.payload.message}")
+          system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
+        case m =>
+          log.error(s"Invalid message: ${m}")
+      }
+    }
     (for {
       response <- {
-        val handlerFlow = Flow.fromSinkAndSourceMat(Sink.foreach[Message](m => { m match {
-          case TextMessage.Strict(m) =>
-            val response = m.parseJson.asJsObject
-            val responseType = response.fields.get("type").map(_.asInstanceOf[JsString].value).getOrElse("unknown")
-            responseType match {
-              case ConnectionAck.`type` =>
-                connectionAcked.success()
-              case Next.`type` =>
-                val subscribe = response.convertTo[Next]
-                publisherCallback.invoke(request.decodeResponse(subscribe.payload) match {
-                  case Left(response) =>
-//                    if (log.isDebugEnabled) log.debug(s"Received websocket message: ${response}")
-                    response
-                  case Right(error) =>
-                    throw new IOException(error)
-                })
-              case Complete.`type` =>
-                val complete = response.convertTo[Complete]
-                log.debug(s"Received websocket complete message")
-                system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
-              case Error.`type` =>
-                val error = response.convertTo[Error]
-                log.error(s"Received websocket subscription error: ${error.payload.message}")
-                system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
-              case m =>
-                log.error(s"Invalid message: ${m}")
-            }
-          case _ =>
-        }}), Source.combine(
-          Source.single(TextMessage(ConnectionInit(payload =
-            ConnectionInitPayload(s"Bearer ${token}")).toJson.compactPrint)),
-          Source.future(connectionAcked.future).map(_ => TextMessage(Subscribe(id = id, payload =
-            SubscribePayload(query = request.encodeQuery(), Some(request.command), Some(request.encodeVariables()), None)).toJson.compactPrint)),
-          Source.future(Promise[Message]().future))(Concat(_))
+        val handlerFlow = Flow.fromSinkAndSourceMat(Sink.foreach[Message](message => {
+          message match {
+            case TextMessage.Streamed(source) =>
+              source.runFold("")(_ + _).foreach(processMessage(_))
+            case TextMessage.Strict(message) =>
+              processMessage(message)
+          }}), Source.combine(
+            Source.single(TextMessage(ConnectionInit(payload =
+              ConnectionInitPayload(s"Bearer ${token}")).toJson.compactPrint)),
+            Source.future(connectionAcked.future).map(_ => TextMessage(Subscribe(id = id, payload =
+              SubscribePayload(query = request.encodeQuery(), Some(request.command), Some(request.encodeVariables()), None)).toJson.compactPrint)),
+            Source.future(Promise[Message]().future))(Concat(_))
         )(Keep.left)
         val webSocketRequest = WebSocketRequest(uri,
           getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
