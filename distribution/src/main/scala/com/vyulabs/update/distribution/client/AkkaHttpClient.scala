@@ -171,6 +171,8 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
               source.runFold("")(_ + _).foreach(processMessage(_))
             case TextMessage.Strict(message) =>
               processMessage(message)
+            case m =>
+              throw new IOException(s"Unknown websocket message ${m}")
           }}), Source.combine(
             Source.single(TextMessage(ConnectionInit(payload =
               ConnectionInitPayload(s"Bearer ${token}")).toJson.compactPrint)),
