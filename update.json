@@ -59,24 +59,8 @@
           "destinationFile": "builder-%%version%%.jar"
         },
         {
-          "sourceFile": "target/org.eclipse.jgit-6.1.0.202203080745-r.jar",
-          "destinationFile": "org.eclipse.jgit-6.1.0.202203080745-r.jar"
-        },
-        {
-          "sourceFile": "target/org.eclipse.jgit.ssh.apache.agent-6.1.0.202203080745-r.jar",
-          "destinationFile": "org.eclipse.jgit.ssh.apache.agent-6.1.0.202203080745-r.jar"
-        },
-        {
-          "sourceFile": "target/org.eclipse.jgit.ssh.apache-6.1.0.202203080745-r.jar",
-          "destinationFile": "org.eclipse.jgit.ssh.apache-6.1.0.202203080745-r.jar"
-        },
-        {
-          "sourceFile": "target/sshd-core-2.8.0.jar",
-          "destinationFile": "sshd-core-2.8.0.jar"
-        },
-        {
-          "sourceFile": "target/sshd-common-2.8.0.jar",
-          "destinationFile": "sshd-common-2.8.0.jar"
+          "sourceFile": "target/bcprov-jdk15on-1.58.jar",
+          "destinationFile": "bcprov-jdk15on-1.58.jar"
         }
       ]
     },
@@ -84,9 +68,8 @@
       "runService": {
         "command": "/usr/bin/java",
         "args": [
-          "-classpath",
-          "builder-%%version%%.jar:org.eclipse.jgit-6.1.0.202203080745-r.jar:org.eclipse.jgit.ssh.apache.agent-6.1.0.202203080745-r.jar:org.eclipse.jgit.ssh.apache-6.1.0.202203080745-r.jar:sshd-core-2.8.0.jar:sshd-common-2.8.0.jar",
-          "com.vyulabs.update.builder.BuilderMain"
+          "-jar",
+          "builder-%%version%%.jar"
         ]
       }
     }

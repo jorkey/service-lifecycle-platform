@@ -34,8 +34,19 @@ lazy val builder = project
   .in(file("builder"))
   .settings(
     libraryDependencies ++= baseDependencies,
-    assemblySettings
-  )
+    assemblySettings :+
+      (assemblyExcludedJars in assembly := {
+        val classPath = (fullClasspath in assembly).value
+        val path = (assemblyOutputPath in assembly).value.getParentFile
+        classPath filter { file =>
+          if (file.data.getName.contains("bcprov-jdk15on")) {
+            Files.copy(file.data.toPath, new File(path, file.data.getName).toPath, StandardCopyOption.REPLACE_EXISTING)
+            true
+          } else {
+            false
+          }
+        }
+      }))
   .dependsOn(
     gitLib,
     distribution % "test->test"
@@ -182,18 +193,6 @@ lazy val assemblySettings = Seq(
     case PathList("reference.conf") => MergeStrategy.concat // Akka configuration file
     case PathList("META-INF", _@_*) => MergeStrategy.discard
     case _ => MergeStrategy.first
-  },
-  assemblyExcludedJars in assembly := {
-    val classPath = (fullClasspath in assembly).value
-    val path = (assemblyOutputPath in assembly).value.getParentFile
-    classPath filter { file =>
-      if (file.data.getName.contains("jgit") || file.data.getName.contains("sshd-core") || file.data.getName.contains("sshd-common")) {
-        Files.copy(file.data.toPath,
-          new File(path, file.data.getName).toPath,
-          StandardCopyOption.REPLACE_EXISTING)
-      }
-      file.data.getName.contains("jgit") || file.data.getName.contains("sshd")
-    }
   }
 )
 
