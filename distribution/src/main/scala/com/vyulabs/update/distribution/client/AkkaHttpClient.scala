@@ -165,7 +165,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
       }
     }
 
-    val handleMessage = Source.fromGraph(new AkkaCallbackSource[Source[String, _]]()).map {
+    val handleMessage = Source.fromGraph(new AkkaCallbackSource[Source[String, _]]()).mapAsync(1) {
       _.runFold("")(_ + _).andThen {
         case Success(message) =>
           processMessage(message)
