@@ -136,6 +136,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
         .run()
     val id = Random.nextInt().toString
     val connectionAcked = Promise[Unit]()
+
     def processMessage(message: String): Unit = {
       val response = message.parseJson.asJsObject
       val responseType = response.fields.get("type").map(_.asInstanceOf[JsString].value).getOrElse("unknown")
@@ -163,14 +164,24 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
           log.error(s"Invalid message: ${m}")
       }
     }
+
+    val handleMessage = Source.fromGraph(new AkkaCallbackSource[Source[String, _]]()).map {
+      _.runFold("")(_ + _).andThen {
+        case Success(message) =>
+          processMessage(message)
+        case Failure(ex) =>
+          log.error("Receive websocket message error", ex)
+      }
+    }.toMat(BroadcastHub.sink)(Keep.left).run()
+
     (for {
       response <- {
         val handlerFlow = Flow.fromSinkAndSourceMat(Sink.foreach[Message](message => {
           message match {
             case TextMessage.Streamed(source) =>
-              source.runFold("")(_ + _).foreach(processMessage(_))
+              handleMessage.invoke(source)
             case TextMessage.Strict(message) =>
-              processMessage(message)
+              handleMessage.invoke(Source.single(message))
             case m =>
               throw new IOException(s"Unknown websocket message ${m}")
           }}), Source.combine(
