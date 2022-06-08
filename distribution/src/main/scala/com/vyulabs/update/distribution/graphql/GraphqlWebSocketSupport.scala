@@ -3,6 +3,7 @@ package com.vyulabs.update.distribution.graphql
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.ws._
+import akka.stream.scaladsl.MergeHub.DrainingControl
 import akka.stream.scaladsl._
 import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
 import org.slf4j.Logger
@@ -19,8 +20,9 @@ trait GraphqlWebSocketSupport {
   def handleWebSocket(tracing: Boolean)
                      (implicit system: ActorSystem, materializer: Materializer,
                       executionContext: ExecutionContext, log: Logger): Flow[Message, Message, Any] = {
-    val output = MergeHub.source[TextMessage.Strict](perProducerBufferSize = 16)
+    val output = MergeHub.sourceWithDraining[TextMessage.Strict](perProducerBufferSize = 16)
     var sink = Option.empty[Sink[TextMessage.Strict, NotUsed]]
+    var drain = Option.empty[DrainingControl]
     var context = Option.empty[GraphqlContext]
 
     @volatile
@@ -72,13 +74,17 @@ trait GraphqlWebSocketSupport {
                         subscribe.payload.variables.getOrElse(JsObject.empty), tracing)
                       for (sink <- sink) {
                         val killSwitch = Source.combine(
-                          querySource.flatMapConcat(msg => {
-                            Source.single(serializeMessage(Next(id = subscribe.id, payload = msg.asJsObject))) }),
-                          Source.single(serializeMessage(Complete(id = subscribe.id))))(Concat(_))
+                            querySource.flatMapConcat(msg => {
+                              Source.single(serializeMessage(Next(id = subscribe.id, payload = msg.asJsObject))) }),
+                            Source.single(serializeMessage(Complete(id = subscribe.id))))(Concat(_))
                           .map(msg => {
                             if (log.isDebugEnabled) log.debug(s"Send websocket message ${msg}"); msg
                           })
-                          .watchTermination()( (_, _) => { subscriptionKills -= subscribe.id })
+                          .watchTermination()( (_, future) => {
+                            future.onComplete(_ => {
+                              drain.foreach(_.drainAndComplete())
+                              subscriptionKills -= subscribe.id
+                            })})
                           .viaMat(KillSwitches.single)(Keep.right)
                           .to(sink).run()
                         subscriptionKills += (subscribe.id -> killSwitch)
@@ -124,6 +130,6 @@ trait GraphqlWebSocketSupport {
       }
       .to(Sink.ignore)
 
-    Flow.fromSinkAndSourceCoupledMat(input, output)((_, s) => { sink = Some(s); Unit })
+    Flow.fromSinkAndSourceCoupledMat(input, output)((_, s) => { sink = Some(s._1); drain = Some(s._2); Unit })
   }
 }

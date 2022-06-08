@@ -6,7 +6,7 @@ import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, HttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.scaladsl.{BroadcastHub, Concat, FileIO, Flow, Framing, Keep, Sink, Source}
+import akka.stream.scaladsl.{Concat, FileIO, Flow, Framing, Keep, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
@@ -132,7 +132,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
     val ((publisherCallback, killSwitch), publisherSource) =
       Source.fromGraph(new AkkaCallbackSource[Response]())
         .viaMat(KillSwitches.single)(Keep.both)
-        .toMat(BroadcastHub.sink)(Keep.both)
+        .toMat(Sink.asPublisher[Response](false))(Keep.both)
         .run()
     val id = Random.nextInt().toString
     val connectionAcked = Promise[Unit]()
@@ -172,7 +172,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
         case Failure(ex) =>
           log.error("Receive websocket message error", ex)
       }
-    }.toMat(BroadcastHub.sink)(Keep.left).run()
+    }.toMat(Sink.ignore)(Keep.left).run()
 
     (for {
       response <- {
@@ -195,7 +195,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
           getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
         val (response, closed) = Http(system).singleWebSocketRequest(webSocketRequest, handlerFlow)
         closed.foreach { _ =>
-          log.info("Websocket connection is closed")
+          log.debug("Websocket connection is closed")
           system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
         }
         response
@@ -207,7 +207,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
         }
         throw new IOException(response.response.status.toString())
       }
-    }).map(_ => publisherSource)
+    }).map(_ => Source.fromPublisher(publisherSource))
   }
 
   def upload(path: String, fieldName: String, file: File)

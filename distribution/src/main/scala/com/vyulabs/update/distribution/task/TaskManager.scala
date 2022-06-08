@@ -8,6 +8,8 @@ import com.vyulabs.update.distribution.logger.LogStorekeeper
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.util.Date
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 case class TaskLimit(taskType: String, concurrentTasksCount: Option[Int])
@@ -43,7 +45,7 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)
       } else {
         appender.setTerminationStatus(false, Some(status.failed.get.getMessage))
       }
-      appender.stop()
+      timer.scheduleOnce(() => appender.stop(),  FiniteDuration(1, TimeUnit.SECONDS))
       activeTasks -= taskId
     }
     task
