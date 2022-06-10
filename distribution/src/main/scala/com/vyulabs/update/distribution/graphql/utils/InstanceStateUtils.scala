@@ -15,7 +15,7 @@ import org.slf4j.Logger
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait StateUtils extends SprayJsonSupport {
+trait InstanceStateUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
@@ -25,37 +25,37 @@ trait StateUtils extends SprayJsonSupport {
 
   protected val config: DistributionConfig
 
-  def setSelfServiceStates(states: Seq[DirectoryServiceState])(implicit log: Logger): Future[Unit] = {
-    setServiceStates(config.distribution, states.map(state => InstanceServiceState(config.instance, state.service, state.directory, state.state)))
+  def setSelfInstanceStates(states: Seq[DirectoryServiceState])(implicit log: Logger): Future[Unit] = {
+    setInstanceStates(config.distribution, states.map(state => InstanceState(config.instance, state.service, state.directory, state.state)))
   }
 
-  def setServiceStates(distribution: DistributionId, instanceStates: Seq[InstanceServiceState])(implicit log: Logger): Future[Unit] = {
-    val documents = instanceStates.foldLeft(Seq.empty[DistributionServiceState])((seq, state) => seq :+
-      DistributionServiceState(distribution = distribution, instance = state.instance, service = state.service, directory = state.directory, state.state))
+  def setInstanceStates(distribution: DistributionId, instanceStates: Seq[InstanceState])(implicit log: Logger): Future[Unit] = {
+    val documents = instanceStates.foldLeft(Seq.empty[DistributionInstanceState])((seq, state) => seq :+
+      DistributionInstanceState(distribution = distribution, instance = state.instance, service = state.service, directory = state.directory, state.state))
     Future.sequence(documents.map(doc => {
       val filters = Filters.and(
         Filters.eq("distribution", distribution),
         Filters.eq("service", doc.service),
         Filters.eq("instance", doc.instance),
         Filters.eq("directory", doc.directory))
-      collections.State_ServiceStates.update(filters, _ => Some(doc))
+      collections.State_Instances.update(filters, _ => Some(doc))
     })).map(_ => ())
   }
 
-  def getServicesState(distribution: Option[DistributionId], service: Option[ServiceId],
-                       instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[DistributionServiceState]] = {
+  def getInstancesState(distribution: Option[DistributionId], service: Option[ServiceId],
+                        instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[DistributionInstanceState]] = {
     val distributionArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
     val serviceArg = service.map { service => Filters.eq("service", service) }
     val instanceArg = instance.map { instance => Filters.eq("instance", instance) }
     val directoryArg = directory.map { directory => Filters.eq("directory", directory) }
     val args = distributionArg ++ serviceArg ++ instanceArg ++ directoryArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.State_ServiceStates.find(filters)
+    collections.State_Instances.find(filters)
   }
 
-  def getInstanceServiceStates(distribution: Option[DistributionId], service: Option[ServiceId],
-                               instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceServiceState]] = {
-    getServicesState(distribution, service, instance, directory).map(_.map(s =>
-      InstanceServiceState(instance = s.instance, service = s.service, directory = s.directory, state = s.state)))
+  def getInstanceStates(distribution: Option[DistributionId], service: Option[ServiceId],
+                        instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceState]] = {
+    getInstancesState(distribution, service, instance, directory).map(_.map(s =>
+      InstanceState(instance = s.instance, service = s.service, directory = s.directory, state = s.state)))
   }
 }

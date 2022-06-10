@@ -37,8 +37,8 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
   override def dbName = super.dbName + "-client"
 
   override def beforeAll() = {
-    result(collections.State_ServiceStates.insert(
-      DistributionServiceState(distributionName, "instance1", DirectoryServiceState("consumer", "directory1",
+    result(collections.State_Instances.insert(
+      DistributionInstanceState(distributionName, "instance1", DirectoryServiceState("consumer", "directory1",
         ServiceState(time = stateDate, None, None, version =
           Some(ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0)), None, None, None, None)))))
   }
@@ -171,19 +171,19 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
     }
 
     it should "execute service states requests" in {
-      assert(updaterClient.graphqlRequest(updaterMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
+      assert(updaterClient.graphqlRequest(updaterMutations.setInstanceStates(Seq(InstanceState("instance1", "service1", "directory1",
         ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distribution}-1.2.1")), None, None, None, None))))).getOrElse(false))
 
-      assert(consumerClient.graphqlRequest(distributionMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
+      assert(consumerClient.graphqlRequest(distributionMutations.setInstanceStates(Seq(InstanceState("instance1", "service1", "directory1",
         ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution-3.2.1")), None, None, None, None))))).getOrElse(false))
 
-      assertResult(Some(Seq(DistributionServiceState(distributionName, "instance1", "service1", "directory1",
+      assertResult(Some(Seq(DistributionInstanceState(distributionName, "instance1", "service1", "directory1",
         ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distribution}-1.2.1")), None, None, None, None)))))(
-        adminClient.graphqlRequest(administratorQueries.getServiceStates(Some(distributionName), Some("service1"), Some("instance1"), Some("directory1"))))
+        adminClient.graphqlRequest(administratorQueries.getInstanceStates(Some(distributionName), Some("service1"), Some("instance1"), Some("directory1"))))
 
-      assertResult(Some(Seq(DistributionServiceState("consumer", "instance1", "service1", "directory1",
+      assertResult(Some(Seq(DistributionInstanceState("consumer", "instance1", "service1", "directory1",
         ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution-3.2.1")), None, None, None, None)))))(
-        adminClient.graphqlRequest(administratorQueries.getServiceStates(Some("consumer"), Some("service1"), Some("instance1"), Some("directory1"))))
+        adminClient.graphqlRequest(administratorQueries.getInstanceStates(Some("consumer"), Some("service1"), Some("instance1"), Some("directory1"))))
     }
 
     it should "execute service log requests" in {

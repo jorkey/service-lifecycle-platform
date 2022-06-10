@@ -192,7 +192,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     Thread.sleep(10000)
     distributionBuilder.waitForServerAvailable()
     Thread.sleep(5000)
-    val states = adminClient.graphqlRequest(developerQueries.getServiceStates(distribution = Some(distribution),
+    val states = adminClient.graphqlRequest(developerQueries.getInstanceStates(distribution = Some(distribution),
       service = Some(Common.DistributionServiceName))).getOrElse {
       sys.error("Can't get version of distribution server")
     }

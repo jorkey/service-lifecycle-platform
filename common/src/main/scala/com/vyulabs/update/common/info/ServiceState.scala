@@ -37,8 +37,8 @@ object DirectoryServiceState extends DefaultJsonProtocol {
   }
 }
 
-case class InstanceServiceState(instance: InstanceId, service: ServiceId, directory: ServiceDirectory, state: ServiceState)
+case class InstanceState(instance: InstanceId, service: ServiceId, directory: ServiceDirectory, state: ServiceState)
 
-object InstanceServiceState extends DefaultJsonProtocol {
-  implicit val instanceServiceStateJson = jsonFormat4(InstanceServiceState.apply)
+object InstanceState extends DefaultJsonProtocol {
+  implicit val instanceServiceStateJson = jsonFormat4(InstanceState.apply)
 }

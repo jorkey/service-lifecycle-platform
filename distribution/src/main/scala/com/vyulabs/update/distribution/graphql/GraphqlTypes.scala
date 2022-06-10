@@ -85,6 +85,7 @@ object GraphqlTypes {
   }
 
   implicit val AccountRoleType = deriveEnumType[AccountRole.AccountRole]()
+  implicit val BuildStateType = deriveEnumType[BuildState.BuildState]()
 
   implicit val ServicesProfileType = deriveObjectType[Unit, ServicesProfile]()
   implicit val GitConfigType = deriveObjectType[Unit, GitConfig]()
@@ -112,8 +113,8 @@ object GraphqlTypes {
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
   implicit val DirectoryServiceStateType = deriveObjectType[Unit, DirectoryServiceState]()
-  implicit val InstanceServiceStateType = deriveObjectType[Unit, InstanceServiceState]()
-  implicit val DistributionServiceStateType = deriveObjectType[Unit, DistributionServiceState]()
+  implicit val InstanceServiceStateType = deriveObjectType[Unit, InstanceState]()
+  implicit val DistributionServiceStateType = deriveObjectType[Unit, DistributionInstanceState]()
   implicit val LogLineType = deriveObjectType[Unit, LogLine]()
   implicit val ServiceLogLineType = deriveObjectType[Unit, ServiceLogLine]()
   implicit val SequencedServiceLogLineType = deriveObjectType[Unit, SequencedServiceLogLine]()
@@ -145,8 +146,8 @@ object GraphqlTypes {
   implicit val DeveloperDesiredVersionDeltaInputType = deriveInputObjectType[DeveloperDesiredVersionDelta](InputObjectTypeName("DeveloperDesiredVersionDeltaInput"))
   implicit val ClientDesiredVersionDeltaInputType = deriveInputObjectType[ClientDesiredVersionDelta](InputObjectTypeName("ClientDesiredVersionDeltaInput"))
   implicit val UpdateErrorInputType = deriveInputObjectType[UpdateError](InputObjectTypeName("UpdateErrorInput"))
-  implicit val ServiceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("ServiceStateInput"))
-  implicit val InstanceServiceStateInputType = deriveInputObjectType[InstanceServiceState](InputObjectTypeName("InstanceServiceStateInput"))
+  implicit val InstanceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("InstanceStateInput"))
+  implicit val InstanceServiceStateInputType = deriveInputObjectType[InstanceState](InputObjectTypeName("InstanceServiceStateInput"))
   implicit val LogLineInputType = deriveInputObjectType[LogLine](InputObjectTypeName("LogLineInput"))
   implicit val FaultInfoInputType = deriveInputObjectType[FaultInfo](InputObjectTypeName("FaultInfoInput"))
   implicit val FileInfoInputType = deriveInputObjectType[FileInfo](InputObjectTypeName("FileInfoInput"))

@@ -5,7 +5,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlArgument
-import com.vyulabs.update.common.info.{DirectoryServiceState, DistributionServiceState, InstanceServiceState, ServiceState}
+import com.vyulabs.update.common.info.{DirectoryServiceState, DistributionInstanceState, InstanceState, ServiceState}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
@@ -36,20 +36,20 @@ class ServicesStateUploadTest extends TestEnvironment {
     val uploader = new StateUploader("consumer", collections, distributionDir, distributionClient)
     uploader.start()
 
-    collections.State_ServiceStates.setSequence(0)
+    collections.State_Instances.setSequence(0)
 
-    val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
+    val state1 = DistributionInstanceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1, 1, 0), 0)), None, None, None, None)))
-    result(collections.State_ServiceStates.insert(state1))
+    result(collections.State_Instances.insert(state1))
     waitForSetServiceStates(Seq(state1)).success(true)
 
     Thread.sleep(500)
     assertResult(UploadStatusDocument("state.serviceStates", Some(1), None))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
-    val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
+    val state2 = DistributionInstanceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1, 1, 1), 0)), None, None, None, None)))
-    result(collections.State_ServiceStates.insert(state2))
+    result(collections.State_Instances.insert(state2))
     waitForSetServiceStates(Seq(state2)).success(true)
 
     Thread.sleep(500)
@@ -64,23 +64,23 @@ class ServicesStateUploadTest extends TestEnvironment {
     val uploader = new StateUploader("consumer", collections, distributionDir, distributionClient)
     uploader.start()
 
-    val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
+    val state1 = DistributionInstanceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1, 1, 0), 0)), None, None, None, None)))
-    result(collections.State_ServiceStates.insert(state1))
+    result(collections.State_Instances.insert(state1))
     waitForSetServiceStates(Seq(state1)).failure(new IOException("upload error"))
 
     Thread.sleep(500)
     assertResult(UploadStatusDocument("state.serviceStates", None, Some("upload error")))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
-    val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
+    val state2 = DistributionInstanceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1, 1, 1), 0)), None, None, None, None)))
-    result(collections.State_ServiceStates.insert(state2))
+    result(collections.State_Instances.insert(state2))
     waitForSetServiceStates(Seq(state1, state2)).success(true)
 
-    val state3 = DistributionServiceState("client3", "instance3", DirectoryServiceState("service3", "directory",
+    val state3 = DistributionInstanceState("client3", "instance3", DirectoryServiceState("service3", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1, 1, 1), 0)), None, None, None, None)))
-    result(collections.State_ServiceStates.insert(state3))
+    result(collections.State_Instances.insert(state3))
     waitForSetServiceStates(Seq(state3)).success(true)
 
     Thread.sleep(500)
@@ -95,14 +95,14 @@ class ServicesStateUploadTest extends TestEnvironment {
     httpClient.waitForMutation("login", Seq(GraphqlArgument("account" -> "test"), GraphqlArgument("password" -> "test")))
   }
 
-  private def waitForSetServiceStates(states: Seq[DistributionServiceState]): Promise[Boolean] = {
+  private def waitForSetServiceStates(states: Seq[DistributionInstanceState]): Promise[Boolean] = {
     httpClient.waitForMutation("setServiceStates", Seq(GraphqlArgument("states" ->
-      states.map(s => InstanceServiceState(s.instance, s.service, s.directory, s.state)).toJson, "[InstanceServiceStateInput!]")))
+      states.map(s => InstanceState(s.instance, s.service, s.directory, s.state)).toJson, "[InstanceServiceStateInput!]")))
   }
 
   private def clear(): Unit = {
-    result(collections.State_ServiceStates.drop())
-    collections.State_ServiceStates.setSequence(0)
+    result(collections.State_Instances.drop())
+    collections.State_Instances.setSequence(0)
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 }

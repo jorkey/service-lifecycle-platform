@@ -4,7 +4,7 @@ import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.InstanceId
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder.updaterMutations
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.info.{DirectoryServiceState, InstanceServiceState, ServiceNameWithRole}
+import com.vyulabs.update.common.info.{DirectoryServiceState, InstanceState, ServiceNameWithRole}
 import com.vyulabs.update.updater.ServiceStateController
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
@@ -56,7 +56,7 @@ class StateUploader(directory: File, instance: InstanceId, servicesNames: Set[Se
     val scriptsState = DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))
     val serviceStates = services.foldLeft(Seq(scriptsState))((state, service) =>
       state :+ DirectoryServiceState(service._1.name, service._2.serviceDirectory.getCanonicalPath, service._2.getState()))
-    val instanceServiceStates = serviceStates.map(state => InstanceServiceState(instance, state.service, state.directory, state.state))
-    syncDistributionClient.graphqlRequest(updaterMutations.setServiceStates(instanceServiceStates)).getOrElse(false)
+    val instanceServiceStates = serviceStates.map(state => InstanceState(instance, state.service, state.directory, state.state))
+    syncDistributionClient.graphqlRequest(updaterMutations.setInstanceStates(instanceServiceStates)).getOrElse(false)
   }
 }

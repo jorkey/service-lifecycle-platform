@@ -130,6 +130,6 @@ class StateInfoTest extends TestEnvironment {
       """))
     )
 
-    result(collections.State_ServiceStates.drop())
+    result(collections.State_Instances.drop())
   }
 }

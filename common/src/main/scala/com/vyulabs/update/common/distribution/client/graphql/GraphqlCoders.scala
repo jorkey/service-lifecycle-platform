@@ -4,6 +4,7 @@ import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccoun
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.{BuildServiceConfig, NamedStringValue, Repository}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
+import com.vyulabs.update.common.info.BuildState.BuildState
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
@@ -77,8 +78,8 @@ trait ClientDesiredVersionsCoder {
 }
 
 trait StateCoder {
-  def getServiceStates(distribution: Option[DistributionId] = None, service: Option[ServiceId] = None, instance: Option[InstanceId] = None, directory: Option[ServiceDirectory] = None) =
-    GraphqlQuery[Seq[DistributionServiceState]]("serviceStates",
+  def getInstanceStates(distribution: Option[DistributionId] = None, service: Option[ServiceId] = None, instance: Option[InstanceId] = None, directory: Option[ServiceDirectory] = None) =
+    GraphqlQuery[Seq[DistributionInstanceState]]("instanceStates",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service),
         GraphqlArgument("instance" -> instance), GraphqlArgument("directory" -> directory)).filter(_.value != JsNull),
       "{ distribution, instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }"
@@ -253,8 +254,25 @@ trait AddLogsCoder {
 }
 
 trait SetServiceStatesCoder {
-  def setServiceStates(states: Seq[InstanceServiceState]) =
-    GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
+  def setBuildDeveloperState(service: ServiceId, author: AccountId,
+                             version: DeveloperDistributionVersion, comment: String,
+                             task: TaskId, state: BuildState) =
+    GraphqlMutation[Boolean]("setBuildDeveloperState",
+      Seq(GraphqlArgument("service" -> service), GraphqlArgument("author" -> author),
+        GraphqlArgument("version" -> version, "DeveloperDistributionVersionInput"),
+        GraphqlArgument("comment" -> comment), GraphqlArgument("task" -> task),
+        GraphqlArgument("state" -> state, "BuildStateInput")))
+
+  def setBuildClientState(service: ServiceId, author: AccountId,
+                          version: ClientDistributionVersion,
+                          task: TaskId, state: BuildState) =
+    GraphqlMutation[Boolean]("setBuildClientState",
+      Seq(GraphqlArgument("service" -> service), GraphqlArgument("author" -> author),
+        GraphqlArgument("version" -> version, "ClientDistributionVersionInput"),
+        GraphqlArgument("task" -> task), GraphqlArgument("state" -> state, "BuildStateInput")))
+
+  def setInstanceStates(states: Seq[InstanceState]) =
+    GraphqlMutation[Boolean]("setInstanceStates", Seq(GraphqlArgument("states" -> states, "[InstanceStateInput!]")))
 }
 
 trait AddFaultReportInfoCoder {

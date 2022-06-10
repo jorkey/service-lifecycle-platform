@@ -9,7 +9,7 @@ import com.vyulabs.update.common.common.Common.DistributionId
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.ConsumerMutationsCoder
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{InstanceServiceState, ServiceFaultReport}
+import com.vyulabs.update.common.info.{InstanceState, ServiceFaultReport}
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
@@ -88,22 +88,22 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   private def uploadServiceStates(): Future[Unit] = {
     log.debug(s"Upload service states to ${client.url}")
     for {
-      from <- getLastUploadSequence(collections.State_ServiceStates.name)
-      newStatesDocuments <- collections.State_ServiceStates.findSequenced(Filters.gt("_sequence", from), sort = Some(Sorts.ascending("_sequence")))
+      from <- getLastUploadSequence(collections.State_Instances.name)
+      newStatesDocuments <- collections.State_Instances.findSequenced(Filters.gt("_sequence", from), sort = Some(Sorts.ascending("_sequence")))
       newStates <- Future(newStatesDocuments)
       _ <- {
         if (!newStates.isEmpty) {
-          client.graphqlRequest(ConsumerMutationsCoder.setServiceStates(newStates.map(s =>
-              InstanceServiceState(
+          client.graphqlRequest(ConsumerMutationsCoder.setInstanceStates(newStates.map(s =>
+              InstanceState(
                 instance = s.document.instance,
                 service = s.document.service,
                 directory = s.document.directory,
                 state = s.document.state)))).
             andThen {
               case Success(_) =>
-                setLastUploadSequence(collections.State_ServiceStates.name, newStatesDocuments.last.sequence)
+                setLastUploadSequence(collections.State_Instances.name, newStatesDocuments.last.sequence)
               case Failure(ex) =>
-                setLastUploadError(collections.State_ServiceStates.name, ex.getMessage)
+                setLastUploadError(collections.State_Instances.name, ex.getMessage)
             }
         } else {
           Promise[Unit].success(Unit).future

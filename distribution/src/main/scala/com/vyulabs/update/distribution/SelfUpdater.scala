@@ -9,7 +9,7 @@ import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{ClientDesiredVersions, DirectoryServiceState}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
-import com.vyulabs.update.distribution.graphql.utils.StateUtils
+import com.vyulabs.update.distribution.graphql.utils.InstanceStateUtils
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
 
@@ -23,7 +23,7 @@ import scala.util.{Failure, Success}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 9.12.19.
   * Copyright FanDate, Inc.
   */
-class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirectory, stateUtils: StateUtils)
+class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirectory, stateUtils: InstanceStateUtils)
                  (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -39,7 +39,7 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
   private def update(): Unit = {
     (for {
       _ <- {
-        stateUtils.setSelfServiceStates(Seq(
+        stateUtils.setSelfInstanceStates(Seq(
           DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")),
           DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, new File("."))
         ) ++ directory.getBuilderDir().listFiles().map(DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, _)))
