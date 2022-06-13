@@ -49,8 +49,10 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
     classOf[DistributionProviderInfo],
     classOf[ServicesProfile],
     classOf[DistributionInstanceState],
+    classOf[AddressedInstanceState],
+    classOf[ServerBuildDeveloperServiceState],
+    classOf[ServerBuildClientServiceState],
     classOf[InstanceState],
-    classOf[ServiceState],
     classOf[UpdateError],
     classOf[ServiceLogLine],
     classOf[DistributionFaultReport],
@@ -152,19 +154,21 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
     collection
   }, createIndices = createIndices)
 
-  val State_DeveloperBuild = new SequencedCollection[BuildDeveloperServiceState]("state.developerBuild", for {
+  val State_DeveloperBuild = new SequencedCollection[ServerBuildDeveloperServiceState]("state.developerBuild", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.developerBuild")
   } yield {
     if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("state"))
     collection
   }, createIndices = createIndices)
 
-  val State_ClientBuild = new SequencedCollection[BuildClientServiceState]("state.clientBuild", for {
+  val State_ClientBuild = new SequencedCollection[ServerBuildClientServiceState]("state.clientBuild", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.clientBuild")
   } yield {
     if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("state"))
     collection
   }, createIndices = createIndices)
 

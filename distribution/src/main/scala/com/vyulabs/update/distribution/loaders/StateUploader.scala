@@ -9,7 +9,7 @@ import com.vyulabs.update.common.common.Common.DistributionId
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.ConsumerMutationsCoder
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{InstanceState, ServiceFaultReport}
+import com.vyulabs.update.common.info.{AddressedInstanceState, ServiceFaultReport}
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
@@ -94,7 +94,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
       _ <- {
         if (!newStates.isEmpty) {
           client.graphqlRequest(ConsumerMutationsCoder.setInstanceStates(newStates.map(s =>
-              InstanceState(
+              AddressedInstanceState(
                 instance = s.document.instance,
                 service = s.document.service,
                 directory = s.document.directory,

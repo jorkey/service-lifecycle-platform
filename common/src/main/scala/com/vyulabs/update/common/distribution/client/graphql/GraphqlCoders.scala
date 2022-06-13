@@ -4,7 +4,6 @@ import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccoun
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.{BuildServiceConfig, NamedStringValue, Repository}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
-import com.vyulabs.update.common.info.BuildState.BuildState
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
@@ -254,25 +253,8 @@ trait AddLogsCoder {
 }
 
 trait SetServiceStatesCoder {
-  def setBuildDeveloperState(service: ServiceId, author: AccountId,
-                             version: DeveloperDistributionVersion, comment: String,
-                             task: TaskId, state: BuildState) =
-    GraphqlMutation[Boolean]("setBuildDeveloperState",
-      Seq(GraphqlArgument("service" -> service), GraphqlArgument("author" -> author),
-        GraphqlArgument("version" -> version, "DeveloperDistributionVersionInput"),
-        GraphqlArgument("comment" -> comment), GraphqlArgument("task" -> task),
-        GraphqlArgument("state" -> state, "BuildStateInput")))
-
-  def setBuildClientState(service: ServiceId, author: AccountId,
-                          version: ClientDistributionVersion,
-                          task: TaskId, state: BuildState) =
-    GraphqlMutation[Boolean]("setBuildClientState",
-      Seq(GraphqlArgument("service" -> service), GraphqlArgument("author" -> author),
-        GraphqlArgument("version" -> version, "ClientDistributionVersionInput"),
-        GraphqlArgument("task" -> task), GraphqlArgument("state" -> state, "BuildStateInput")))
-
-  def setInstanceStates(states: Seq[InstanceState]) =
-    GraphqlMutation[Boolean]("setInstanceStates", Seq(GraphqlArgument("states" -> states, "[InstanceStateInput!]")))
+  def setInstanceStates(states: Seq[AddressedInstanceState]) =
+    GraphqlMutation[Boolean]("setInstanceStates", Seq(GraphqlArgument("states" -> states, "[AddressedInstanceStateInput!]")))
 }
 
 trait AddFaultReportInfoCoder {

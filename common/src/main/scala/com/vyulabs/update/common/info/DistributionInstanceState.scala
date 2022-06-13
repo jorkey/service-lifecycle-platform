@@ -4,7 +4,7 @@ import com.vyulabs.update.common.common.Common.{DistributionId, InstanceId, Serv
 import spray.json.DefaultJsonProtocol
 
 case class DistributionInstanceState(distribution: DistributionId, instance: InstanceId,
-                                     service: ServiceId, directory: ServiceDirectory, state: ServiceState)
+                                     service: ServiceId, directory: ServiceDirectory, state: InstanceState)
 
 object DistributionInstanceState extends DefaultJsonProtocol {
   implicit val clientServiceStateJson = jsonFormat5(DistributionInstanceState.apply)

@@ -12,9 +12,11 @@ import org.bson.BsonDocument
 import org.slf4j.Logger
 import spray.json._
 
+import java.io.IOException
 import java.util.Date
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
 
@@ -26,6 +28,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
   protected val serviceProfilesUtils: ServiceProfilesUtils
   protected val tasksUtils: TasksUtils
   protected val runBuilderUtils: RunBuilderUtils
+  protected val buildStateUtils: BuildStateUtils
   protected val logUtils: LogUtils
 
   protected implicit val executionContext: ExecutionContext
@@ -42,29 +45,41 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           TaskParameter("buildClientVersion", buildClientVersion.toString)
       ),
       Seq(service),
-      (taskId, logger) => {
+      (task, logger) => {
         implicit val log = logger
-        val arguments = Seq("buildDeveloperVersion",
-          s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}",
-          s"author=${author}", s"comment=${comment}")
-        @volatile var (builderFuture, cancel) =
-          runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
-        val future = builderFuture
+        val state = BuildDeveloperServiceState(service, author, version, comment, task, BuildState.InProcess)
+        @volatile var cancel = Option.empty[() => Unit]
+        val future = buildStateUtils.setBuildDeveloperState(state)
           .flatMap { _ =>
-            cancel = None
-            if (buildClientVersion) {
-              val (future, newCancel) = clientVersionUtils.buildClientVersion(taskId, service,
-                ClientDistributionVersion(config.distribution, version.build, 0), author)
-              cancel = newCancel
-              future
-            } else {
-              Future()
-            }
+            val arguments = Seq("buildDeveloperVersion",
+              s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}",
+              s"author=${author}", s"comment=${comment}")
+            val (builderFuture, cancelBuilder) =
+              runBuilderUtils.runDeveloperBuilder(task, service, arguments)
+            cancel = cancelBuilder
+            builderFuture
+              .flatMap { _ =>
+                cancel = None
+                if (buildClientVersion) {
+                  val (future, newCancel) = clientVersionUtils.buildClientVersion(task, service,
+                    ClientDistributionVersion(config.distribution, version.build, 0), author)
+                  cancel = newCancel
+                  future
+                } else {
+                  Future()
+                }
+              }
+              .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
+                Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))
+              .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
+                Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
           }
-          .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
-            Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))
-          .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
-            Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
+          .andThen {
+            case Success(_) =>
+              buildStateUtils.setBuildDeveloperState(state.copy(state = BuildState.Success))
+            case Failure(_) =>
+              buildStateUtils.setBuildDeveloperState(state.copy(state = BuildState.Failure))
+          }
         (future, Some(() => cancel.foreach(_.apply())))
       }).map(_.taskId)
   }
@@ -153,7 +168,8 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
                                         (implicit log: Logger): Future[Seq[TimedDeveloperDesiredVersions]] = {
     for {
       history <- collections.Developer_DesiredVersions.history(new BsonDocument(), Some(limit))
-        .map(_.map(v => TimedDeveloperDesiredVersions(v.time, v.document.author, v.document.versions)))
+        .map(_.map(v => TimedDeveloperDesiredVersions(v.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
+          v.document.author, v.document.versions)))
     } yield history
   }
 

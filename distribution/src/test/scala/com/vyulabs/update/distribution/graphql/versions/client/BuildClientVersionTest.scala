@@ -135,6 +135,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val messages = json.asJsObject.fields.get("data").get
       .asJsObject.fields.get("subscribeLogs").get.asInstanceOf[JsArray]
         .elements.map(_.asJsObject.fields.get("message").get.asInstanceOf[JsString].value)
+    println(messages)
     if (!messages.contains(message)) {
       expectMessage(input, message)
     }

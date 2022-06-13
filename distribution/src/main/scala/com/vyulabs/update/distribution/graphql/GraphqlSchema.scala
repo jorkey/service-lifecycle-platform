@@ -32,7 +32,8 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
   protected val distributionConsumersUtils = this
   protected val developerVersionUtils = this
   protected val clientVersionUtils = this
-  protected val stateUtils = this
+  protected val buildStateUtils = this
+  protected val instancesStateUtils = this
   protected val logUtils = this
   protected val faultsUtils = this
   protected val tasksUtils = this
@@ -59,7 +60,6 @@ object GraphqlSchema {
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
   val ServicesArg = Argument("services", ListInputType(StringType))
-  val BuildStateArg = Argument("state", BuildStateType)
   val ProfileArg = Argument("profile", StringType)
   val DeveloperVersionArg = Argument("version", DeveloperVersionInputType)
   val ClientVersionArg = Argument("version", ClientVersionInputType)
@@ -72,7 +72,7 @@ object GraphqlSchema {
   val DeveloperDesiredVersionDeltasArg = Argument("versions", ListInputType(DeveloperDesiredVersionDeltaInputType))
   val ClientDesiredVersionDeltasArg = Argument("versions", ListInputType(ClientDesiredVersionDeltaInputType))
   val StatesArg = Argument("states", ListInputType(InstanceStateInputType))
-  val InstanceServiceStatesArg = Argument("states", ListInputType(InstanceServiceStateInputType))
+  val InstanceServiceStatesArg = Argument("states", ListInputType(InstanceAddressedStateInputType))
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportArg = Argument("fault", ServiceFaultReportInputType)
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
@@ -511,17 +511,6 @@ object GraphqlSchema {
           c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
 
       // State
-      Field("setBuildDeveloperState", BooleanType,
-        arguments = ServiceArg :: DeveloperDistributionVersionArg :: CommentArg :: TaskArg :: BuildStateArg :: Nil,
-        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.setBuildDeveloperState(c.ctx.accessToken.get.account,
-          c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg), c.arg(CommentArg),
-          c.arg(TaskArg), c.arg(BuildStateArg)).map(_ => true) }),
-      Field("setBuildClientState", BooleanType,
-        arguments = ServiceArg :: ClientDistributionVersionArg :: TaskArg :: BuildStateArg :: Nil,
-        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.setBuildClientState(c.ctx.accessToken.get.account,
-          c.arg(ServiceArg), c.arg(ClientDistributionVersionArg), c.arg(TaskArg), c.arg(BuildStateArg)).map(_ => true) }),
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
         tags = Authorized(AccountRole.DistributionConsumer) :: Nil,

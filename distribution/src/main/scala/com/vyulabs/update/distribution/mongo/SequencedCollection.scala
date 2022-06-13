@@ -21,9 +21,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
-case class Sequenced[T](sequence: Long, document: T)
-
-case class Timed[T](time: Date, document: T)
+case class Sequenced[T](sequence: Long, modifyTime: Option[Date], document: T)
 
 case class DocumentAlreadyExists() extends Exception
 case class NoSuchDocument() extends Exception
@@ -60,8 +58,9 @@ class SequencedCollection[T: ClassTag](val name: String,
 
   def insert(documents: Seq[T]): Future[Long] = {
     var seq = nextSequence(documents.size) - documents.size + 1
+    val modifyTime = if (modifiable) Some(new Date()) else None
     for (i <- 0 until documents.size) {
-      val line = Sequenced(seq+i, documents(i))
+      val line = Sequenced(seq+i, modifyTime, documents(i))
       publisherBuffer.push(line)
       publisherCallback.invoke(line)
     }
@@ -71,8 +70,8 @@ class SequencedCollection[T: ClassTag](val name: String,
         val docs = documents.map { document =>
           val doc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
           doc.append("_sequence", new BsonInt64(seq)); seq += 1
-          if (modifiable) {
-            doc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
+          for (modifyTime <- modifyTime) {
+            doc.append("_modifyTime", new BsonDateTime(modifyTime.getTime))
           }
           doc
         }
@@ -98,7 +97,10 @@ class SequencedCollection[T: ClassTag](val name: String,
     } yield {
       docs.map(doc => {
         val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
-        Sequenced[T](doc.getInt64("_sequence").getValue, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
+        val sequence = doc.getInt64("_sequence").getValue
+        val modifyTime = if (doc.containsKey("_modifyTime")) Some(new Date(doc.getDateTime("_modifyTime").getValue)) else None
+        Sequenced[T](sequence, modifyTime,
+          codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
       })
     }
   }
@@ -107,7 +109,10 @@ class SequencedCollection[T: ClassTag](val name: String,
     findDocumentsToStream(filters, sort, limit)
       .map(doc => {
         val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
-        Sequenced[T](doc.getInt64("_sequence").getValue, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
+        val sequence = doc.getInt64("_sequence").getValue
+        val modifyTime = if (doc.containsKey("_modifyTime")) Some(new Date(doc.getDateTime("_modifyTime").getValue)) else None
+        Sequenced[T](sequence, modifyTime,
+          codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
       })
   }
 
@@ -232,15 +237,16 @@ class SequencedCollection[T: ClassTag](val name: String,
     } yield result
   }
 
-  def history(filters: Bson = new BsonDocument(), limit: Option[Int] = None): Future[Seq[Timed[T]]] = {
+  def history(filters: Bson = new BsonDocument(), limit: Option[Int] = None): Future[Seq[Sequenced[T]]] = {
     assert(modifiable)
     for {
       docs <- getHistory(filters, limit)
     } yield {
       docs.map(doc => {
         val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
-        val modifyTime = new Date(doc.getDateTime("_modifyTime").getValue)
-        Timed(modifyTime, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
+        val sequence = doc.getInt64("_sequence").getValue
+        val modifyTime = if (doc.containsKey("_modifyTime")) Some(new Date(doc.getDateTime("_modifyTime").getValue)) else None
+        Sequenced(sequence, modifyTime, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
       })
     }
   }

@@ -26,10 +26,10 @@ trait InstanceStateUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
 
   def setSelfInstanceStates(states: Seq[DirectoryServiceState])(implicit log: Logger): Future[Unit] = {
-    setInstanceStates(config.distribution, states.map(state => InstanceState(config.instance, state.service, state.directory, state.state)))
+    setInstanceStates(config.distribution, states.map(state => AddressedInstanceState(config.instance, state.service, state.directory, state.state)))
   }
 
-  def setInstanceStates(distribution: DistributionId, instanceStates: Seq[InstanceState])(implicit log: Logger): Future[Unit] = {
+  def setInstanceStates(distribution: DistributionId, instanceStates: Seq[AddressedInstanceState])(implicit log: Logger): Future[Unit] = {
     val documents = instanceStates.foldLeft(Seq.empty[DistributionInstanceState])((seq, state) => seq :+
       DistributionInstanceState(distribution = distribution, instance = state.instance, service = state.service, directory = state.directory, state.state))
     Future.sequence(documents.map(doc => {
@@ -54,8 +54,8 @@ trait InstanceStateUtils extends SprayJsonSupport {
   }
 
   def getInstanceStates(distribution: Option[DistributionId], service: Option[ServiceId],
-                        instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceState]] = {
+                        instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[AddressedInstanceState]] = {
     getInstancesState(distribution, service, instance, directory).map(_.map(s =>
-      InstanceState(instance = s.instance, service = s.service, directory = s.directory, state = s.state)))
+      AddressedInstanceState(instance = s.instance, service = s.service, directory = s.directory, state = s.state)))
   }
 }

@@ -42,7 +42,7 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report = DistributionFaultReport(distributionName, "fault1",
         FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory",
-          ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
+          InstanceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
           Seq(FileInfo("file1", new Date(), 1234)))
     result(collections.Faults_ReportsInfo.insert(report))
     waitForFaultReportUpload("fault1").success()
@@ -61,7 +61,7 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report1 = DistributionFaultReport(distributionName, "fault1",
       FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory",
-        ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
+        InstanceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
         Seq(FileInfo("file2", new Date(), 1234)))
     result(collections.Faults_ReportsInfo.insert(report1))
     waitForFaultReportUpload( "fault1").failure(new IOException("upload error"))
@@ -73,7 +73,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     waitForFaultReportUpload( "fault1").success()
     waitForAddServiceFaultReportInfo(report1).success(true)
 
-    val report2 = DistributionFaultReport(distributionName, "fault2", FaultInfo(new Date(), "instance2", "service2", Some("role2"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(2), 0)), None, None, None, None), Seq()),
+    val report2 = DistributionFaultReport(distributionName, "fault2", FaultInfo(new Date(), "instance2", "service2", Some("role2"), "directory", InstanceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(2), 0)), None, None, None, None), Seq()),
       Seq(FileInfo("file2", new Date(), 1234)))
     result(collections.Faults_ReportsInfo.insert(report2))
     waitForFaultReportUpload( "fault2").success()

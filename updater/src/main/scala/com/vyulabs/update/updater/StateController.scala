@@ -1,7 +1,7 @@
 package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.info.{ServiceNameWithRole, ServiceState, UpdateError}
+import com.vyulabs.update.common.info.{ServiceNameWithRole, InstanceState, UpdateError}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
@@ -99,7 +99,7 @@ class ServiceStateController(directory: File, profiledServiceName: ServiceNameWi
     updateRepository()
   }
 
-  def getState(): ServiceState = {
-    ServiceState(new Date(), installTime, startTime, version, updateToVersion, updateError, failuresCount, lastExitCode)
+  def getState(): InstanceState = {
+    InstanceState(new Date(), installTime, startTime, version, updateToVersion, updateError, failuresCount, lastExitCode)
   }
 }

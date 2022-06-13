@@ -12,8 +12,10 @@ import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
+import java.io.IOException
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 trait ClientVersionUtils {
   protected val directory: DistributionDirectory
@@ -23,6 +25,7 @@ trait ClientVersionUtils {
 
   protected val distributionProvidersUtils: DistributionProvidersUtils
   protected val runBuilderUtils: RunBuilderUtils
+  protected val buildStateUtils: BuildStateUtils
   protected val tasksUtils: TasksUtils
 
   protected implicit val executionContext: ExecutionContext
@@ -38,7 +41,10 @@ trait ClientVersionUtils {
       services,
       (task, logger) => {
         implicit val log = logger
-        (for {
+        val states = versions.map(version =>
+          BuildClientServiceState(version.service, author, version.version, task, BuildState.InProcess))
+        ((for {
+          _ <- Future.sequence(states.map(buildStateUtils.setBuildClientState(_)))
           _ <- versions.foldLeft(Future())((future, version) => {
             if (version.version.distribution != config.distribution) {
               future.flatMap(_ => distributionProvidersUtils.downloadProviderVersion(
@@ -70,7 +76,12 @@ trait ClientVersionUtils {
             })
             result.flatMap(_ => setClientDesiredVersions(clientVersions, author))
           }
-        } yield {}, taskCancel)
+        } yield {}).andThen {
+          case Success(_) =>
+            Future.sequence(states.map(s => buildStateUtils.setBuildClientState(s.copy(state = BuildState.Success))))
+          case Failure(_) =>
+            Future.sequence(states.map(s => buildStateUtils.setBuildClientState(s.copy(state = BuildState.Failure))))
+        }, taskCancel)
       }).map(_.taskId)
   }
 
@@ -163,7 +174,8 @@ trait ClientVersionUtils {
                                      (implicit log: Logger): Future[Seq[TimedClientDesiredVersions]] = {
     for {
       history <- collections.Client_DesiredVersions.history(new BsonDocument(), Some(limit))
-        .map(_.map(v => TimedClientDesiredVersions(v.time, v.document.author, v.document.versions)))
+        .map(_.map(v => TimedClientDesiredVersions(v.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
+          v.document.author, v.document.versions)))
     } yield history
   }
 

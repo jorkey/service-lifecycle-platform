@@ -16,29 +16,29 @@ object UpdateError extends DefaultJsonProtocol {
   implicit val updateErrorJson = jsonFormat2(UpdateError.apply)
 }
 
-case class ServiceState(time: Date, installTime: Option[Date], startTime: Option[Date],
-                        version: Option[ClientDistributionVersion], updateToVersion: Option[ClientDistributionVersion],
-                        updateError: Option[UpdateError], failuresCount: Option[Int], lastExitCode: Option[Int])
+case class InstanceState(time: Date, installTime: Option[Date], startTime: Option[Date],
+                         version: Option[ClientDistributionVersion], updateToVersion: Option[ClientDistributionVersion],
+                         updateError: Option[UpdateError], failuresCount: Option[Int], lastExitCode: Option[Int])
 
-object ServiceState extends DefaultJsonProtocol {
-  implicit val stateJson = jsonFormat8(ServiceState.apply)
+object InstanceState extends DefaultJsonProtocol {
+  implicit val stateJson = jsonFormat8(InstanceState.apply)
 }
 
-case class DirectoryServiceState(service: ServiceId, directory: ServiceDirectory, state: ServiceState)
+case class DirectoryServiceState(service: ServiceId, directory: ServiceDirectory, state: InstanceState)
 
 object DirectoryServiceState extends DefaultJsonProtocol {
   implicit val serviceStateJson = jsonFormat3(DirectoryServiceState.apply)
 
   def getServiceInstanceState(service: ServiceId, directory: File)(implicit log: Logger): DirectoryServiceState = {
-    val ownState = ServiceState(time = new Date(), installTime = IoUtils.getServiceInstallTime(service, directory),
+    val ownState = InstanceState(time = new Date(), installTime = IoUtils.getServiceInstallTime(service, directory),
       startTime = None, version = IoUtils.readServiceVersion(service, directory),
       updateToVersion = None, updateError = None, failuresCount = None, lastExitCode = None)
     DirectoryServiceState(service, directory.getCanonicalPath(), ownState)
   }
 }
 
-case class InstanceState(instance: InstanceId, service: ServiceId, directory: ServiceDirectory, state: ServiceState)
+case class AddressedInstanceState(instance: InstanceId, service: ServiceId, directory: ServiceDirectory, state: InstanceState)
 
-object InstanceState extends DefaultJsonProtocol {
-  implicit val instanceServiceStateJson = jsonFormat4(InstanceState.apply)
+object AddressedInstanceState extends DefaultJsonProtocol {
+  implicit val instanceServiceStateJson = jsonFormat4(AddressedInstanceState.apply)
 }

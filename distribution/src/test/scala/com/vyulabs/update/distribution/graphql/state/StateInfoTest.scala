@@ -89,10 +89,10 @@ class StateInfoTest extends TestEnvironment {
         ConsumerAccountProperties(Common.CommonConsumerProfile, "http://dummy"))), workspace)
 
     assertResult((OK,
-      ("""{"data":{"setServiceStates":true}}""").parseJson))(
+      ("""{"data":{"setInstanceStates":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
-        mutation ServicesState($$time: Date!) {
-          setServiceStates (
+        mutation InstanceStates($$time: Date!) {
+          setInstanceStates (
             states: [
               { instance: "instance1", service: "service1", directory: "dir",
                   state: { time: $$time, version: { distribution: "test", developerBuild: [1,2,3], clientBuild: 0 } }
@@ -103,10 +103,10 @@ class StateInfoTest extends TestEnvironment {
       """, variables = JsObject("time" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"setServiceStates":true}}""").parseJson))(
+      ("""{"data":{"setInstanceStates":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
-        mutation ServicesState($$time: Date!) {
-          setServiceStates (
+        mutation InstanceStates($$time: Date!) {
+          setInstanceStates (
             states: [
               { instance: "instance1", service: "service1", directory: "dir",
                   state: { time: $$time, version: { distribution: "test", developerBuild: [1,2,4], clientBuild: 0 } }
@@ -117,10 +117,10 @@ class StateInfoTest extends TestEnvironment {
       """, variables = JsObject("time" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"serviceStates":[{"instance":"instance1","state":{"version":{"distribution":"test","developerBuild":[1,2,4],"clientBuild":0}}}]}}""").parseJson))(
+      ("""{"data":{"instanceStates":[{"instance":"instance1","state":{"version":{"distribution":"test","developerBuild":[1,2,4],"clientBuild":0}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
-          serviceStates (distribution: "consumer", service: "service1") {
+          instanceStates (distribution: "consumer", service: "service1") {
             instance
             state {
               version { distribution, developerBuild, clientBuild }

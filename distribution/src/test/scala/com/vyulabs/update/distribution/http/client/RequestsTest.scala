@@ -6,7 +6,6 @@ import com.vyulabs.update.common.accounts.UserAccountProperties
 import com.vyulabs.update.common.common.JWT
 import com.vyulabs.update.common.config.{GitConfig, Repository}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
-import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.developerSubscriptions
 import com.vyulabs.update.common.distribution.client.graphql.ConsumerGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
@@ -39,7 +38,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
   override def beforeAll() = {
     result(collections.State_Instances.insert(
       DistributionInstanceState(distributionName, "instance1", DirectoryServiceState("consumer", "directory1",
-        ServiceState(time = stateDate, None, None, version =
+        InstanceState(time = stateDate, None, None, version =
           Some(ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0)), None, None, None, None)))))
   }
 
@@ -171,18 +170,18 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
     }
 
     it should "execute service states requests" in {
-      assert(updaterClient.graphqlRequest(updaterMutations.setInstanceStates(Seq(InstanceState("instance1", "service1", "directory1",
-        ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distribution}-1.2.1")), None, None, None, None))))).getOrElse(false))
+      assert(updaterClient.graphqlRequest(updaterMutations.setInstanceStates(Seq(AddressedInstanceState("instance1", "service1", "directory1",
+        InstanceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distribution}-1.2.1")), None, None, None, None))))).getOrElse(false))
 
-      assert(consumerClient.graphqlRequest(distributionMutations.setInstanceStates(Seq(InstanceState("instance1", "service1", "directory1",
-        ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution-3.2.1")), None, None, None, None))))).getOrElse(false))
+      assert(consumerClient.graphqlRequest(distributionMutations.setInstanceStates(Seq(AddressedInstanceState("instance1", "service1", "directory1",
+        InstanceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution-3.2.1")), None, None, None, None))))).getOrElse(false))
 
       assertResult(Some(Seq(DistributionInstanceState(distributionName, "instance1", "service1", "directory1",
-        ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distribution}-1.2.1")), None, None, None, None)))))(
+        InstanceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distribution}-1.2.1")), None, None, None, None)))))(
         adminClient.graphqlRequest(administratorQueries.getInstanceStates(Some(distributionName), Some("service1"), Some("instance1"), Some("directory1"))))
 
       assertResult(Some(Seq(DistributionInstanceState("consumer", "instance1", "service1", "directory1",
-        ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution-3.2.1")), None, None, None, None)))))(
+        InstanceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution-3.2.1")), None, None, None, None)))))(
         adminClient.graphqlRequest(administratorQueries.getInstanceStates(Some("consumer"), Some("service1"), Some("instance1"), Some("directory1"))))
     }
 
@@ -192,17 +191,17 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
     }
 
     it should "execute fault report requests" in {
-      assert(updaterClient.graphqlRequest(updaterMutations.addFaultReportInfo(ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "service1", None, "directory", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
+      assert(updaterClient.graphqlRequest(updaterMutations.addFaultReportInfo(ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "service1", None, "directory", InstanceState(stateDate, None, None, None, None, None, None, None), Seq()),
         Seq(FileInfo("fault1.info", stateDate, 1234), FileInfo("core", stateDate, 123456789))))).getOrElse(false))
 
-      assert(consumerClient.graphqlRequest(distributionMutations.addFaultReportInfo(ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "service1", None, "directory", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
+      assert(consumerClient.graphqlRequest(distributionMutations.addFaultReportInfo(ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "service1", None, "directory", InstanceState(stateDate, None, None, None, None, None, None, None), Seq()),
         Seq(FileInfo("fault2.info", stateDate, 1234), FileInfo("core", stateDate, 123456789))))).getOrElse(false))
 
-      assertResult(Some(Seq(DistributionFaultReport(distributionName, "fault1", FaultInfo(stateDate, "instance1", "service1", None, "directory", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
+      assertResult(Some(Seq(DistributionFaultReport(distributionName, "fault1", FaultInfo(stateDate, "instance1", "service1", None, "directory", InstanceState(stateDate, None, None, None, None, None, None, None), Seq()),
           Seq(FileInfo("fault1.info", stateDate, 1234), FileInfo("core", stateDate, 123456789))))))(
         adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some(distributionName), Some("service1"), Some(2))))
 
-      assertResult(Some(Seq(DistributionFaultReport("consumer", "fault2", FaultInfo(stateDate, "instance1", "service1", None, "directory", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
+      assertResult(Some(Seq(DistributionFaultReport("consumer", "fault2", FaultInfo(stateDate, "instance1", "service1", None, "directory", InstanceState(stateDate, None, None, None, None, None, None, None), Seq()),
           Seq(FileInfo("fault2.info", stateDate, 1234), FileInfo("core", stateDate, 123456789))))))(
         adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some("consumer"), Some("service1"), Some(2))))
 
