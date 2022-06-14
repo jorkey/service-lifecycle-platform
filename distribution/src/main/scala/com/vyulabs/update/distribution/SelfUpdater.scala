@@ -6,7 +6,7 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersions, DirectoryServiceState}
+import com.vyulabs.update.common.info.{ClientDesiredVersions, DirectoryInstanceState}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.graphql.utils.InstanceStateUtils
@@ -40,9 +40,9 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
     (for {
       _ <- {
         stateUtils.setSelfInstanceStates(Seq(
-          DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")),
-          DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, new File("."))
-        ) ++ directory.getBuilderDir().listFiles().map(DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, _)))
+          DirectoryInstanceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")),
+          DirectoryInstanceState.getServiceInstanceState(Common.DistributionServiceName, new File("."))
+        ) ++ directory.getBuilderDir().listFiles().map(DirectoryInstanceState.getServiceInstanceState(Common.BuilderServiceName, _)))
       }
       desiredVersions <- collections.Client_DesiredVersions.find().map(_.headOption.getOrElse(
         ClientDesiredVersions(Common.AuthorDistribution, Seq.empty)))

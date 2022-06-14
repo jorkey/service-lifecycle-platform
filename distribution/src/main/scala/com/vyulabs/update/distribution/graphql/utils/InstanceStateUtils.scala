@@ -25,7 +25,7 @@ trait InstanceStateUtils extends SprayJsonSupport {
 
   protected val config: DistributionConfig
 
-  def setSelfInstanceStates(states: Seq[DirectoryServiceState])(implicit log: Logger): Future[Unit] = {
+  def setSelfInstanceStates(states: Seq[DirectoryInstanceState])(implicit log: Logger): Future[Unit] = {
     setInstanceStates(config.distribution, states.map(state => AddressedInstanceState(config.instance, state.service, state.directory, state.state)))
   }
 

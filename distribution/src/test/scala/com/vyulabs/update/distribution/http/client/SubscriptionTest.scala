@@ -34,7 +34,7 @@ class SubscriptionTest extends TestEnvironment(true) with ScalatestRouteTest {
 
   override def beforeAll() = {
     result(collections.State_Instances.insert(
-      DistributionInstanceState(distributionName, "instance1", DirectoryServiceState("consumer", "directory1",
+      DistributionInstanceState(distributionName, "instance1", DirectoryInstanceState("consumer", "directory1",
         InstanceState(time = stateDate, None, None, version =
           Some(ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0)), None, None, None, None)))))
   }

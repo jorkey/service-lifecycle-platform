@@ -42,7 +42,7 @@ trait ClientVersionUtils {
       (task, logger) => {
         implicit val log = logger
         val states = versions.map(version =>
-          BuildClientServiceState(version.service, author, version.version, task, BuildState.InProcess))
+          BuildClientServiceState(version.service, author, version.version, task, BuildStatus.InProcess))
         ((for {
           _ <- Future.sequence(states.map(buildStateUtils.setBuildClientState(_)))
           _ <- versions.foldLeft(Future())((future, version) => {
@@ -78,9 +78,9 @@ trait ClientVersionUtils {
           }
         } yield {}).andThen {
           case Success(_) =>
-            Future.sequence(states.map(s => buildStateUtils.setBuildClientState(s.copy(state = BuildState.Success))))
+            Future.sequence(states.map(s => buildStateUtils.setBuildClientState(s.copy(status = BuildStatus.Success))))
           case Failure(_) =>
-            Future.sequence(states.map(s => buildStateUtils.setBuildClientState(s.copy(state = BuildState.Failure))))
+            Future.sequence(states.map(s => buildStateUtils.setBuildClientState(s.copy(status = BuildStatus.Failure))))
         }, taskCancel)
       }).map(_.taskId)
   }

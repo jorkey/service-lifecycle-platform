@@ -250,6 +250,26 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getConsumerInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       // State
+      Field("developerBuilds", ListType(BuildDeveloperServiceStateType),
+        arguments = OptionServiceArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperBuilds(c.arg(OptionServiceArg)) }),
+
+      Field("developerBuildsHistory", ListType(BuildDeveloperServiceStateType),
+        arguments = OptionServiceArg :: LimitArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperBuildsHistory(c.arg(OptionServiceArg), c.arg(LimitArg)) }),
+
+      Field("clientBuilds", ListType(BuildClientServiceStateType),
+        arguments = OptionServiceArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getClientBuilds(c.arg(OptionServiceArg)) }),
+
+      Field("clientBuildsHistory", ListType(BuildClientServiceStateType),
+        arguments = OptionServiceArg :: LimitArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getClientBuildsHistory(c.arg(OptionServiceArg), c.arg(LimitArg)) }),
+
       Field("instanceStates", ListType(DistributionServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Updater) :: Nil,

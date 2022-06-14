@@ -9,7 +9,7 @@ case class DistributionInstanceState(distribution: DistributionId, instance: Ins
 object DistributionInstanceState extends DefaultJsonProtocol {
   implicit val clientServiceStateJson = jsonFormat5(DistributionInstanceState.apply)
 
-  def apply(distribution: DistributionId, instance: InstanceId, state: DirectoryServiceState): DistributionInstanceState = {
+  def apply(distribution: DistributionId, instance: InstanceId, state: DirectoryInstanceState): DistributionInstanceState = {
     DistributionInstanceState(distribution, instance, state.service, state.directory, state.state)
   }
 }

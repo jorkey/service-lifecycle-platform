@@ -32,63 +32,66 @@ trait BuildStateUtils extends SprayJsonSupport {
     val filters = Filters.eq("service", state.service)
     collections.State_DeveloperBuild.update(filters, _ => Some(
       ServerBuildDeveloperServiceState(state.service, state.author, state.version, state.comment,
-        state.taskId, state.state.toString))).map(_ => Unit)
+        state.task, state.status.toString))).map(_ => Unit)
   }
 
-  def getBuildDeveloperStates(service: Option[ServiceId]): Future[Seq[TimedBuildDeveloperServiceState]] = {
+  def getDeveloperBuilds(service: Option[ServiceId]): Future[Seq[TimedBuildDeveloperServiceState]] = {
     val serviceArg = service.map { service => Filters.eq("service", service) }
     val args = serviceArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.State_DeveloperBuild.findSequenced(filters).map(_.map(
       s => TimedBuildDeveloperServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
-        s.document.service, s.document.author, s.document.version, s.document.taskId, BuildState.withName(s.document.state))))
+        s.document.service, s.document.author, s.document.version,
+        s.document.comment, s.document.task, BuildStatus.withName(s.document.status))))
   }
 
-  def getBuildDeveloperHistory(service: Option[ServiceId], limit: Int): Future[Seq[TimedBuildDeveloperServiceState]] = {
+  def getDeveloperBuildsHistory(service: Option[ServiceId], limit: Int): Future[Seq[TimedBuildDeveloperServiceState]] = {
     val serviceArg = service.map { service => Filters.eq("service", service) }
     val args = serviceArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.State_DeveloperBuild.history(filters, Some(limit)).map(_.map(
       s => TimedBuildDeveloperServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
-        s.document.service, s.document.author, s.document.version, s.document.taskId, BuildState.withName(s.document.state))))
+        s.document.service, s.document.author, s.document.version,
+        s.document.comment, s.document.task, BuildStatus.withName(s.document.status))))
   }
 
   def setBuildClientState(state: BuildClientServiceState): Future[Unit] = {
     val filters = Filters.eq("service", state.service)
     collections.State_ClientBuild.update(filters, _ => Some(
       ServerBuildClientServiceState(state.service, state.author, state.version,
-        state.taskId, state.state.toString))).map(_ => Unit)
+        state.task, state.status.toString))).map(_ => Unit)
   }
 
-  def getBuildClientStates(service: Option[ServiceId]): Future[Seq[BuildClientServiceState]] = {
+  def getClientBuilds(service: Option[ServiceId]): Future[Seq[TimedBuildClientServiceState]] = {
     val serviceArg = service.map { service => Filters.eq("service", service) }
     val args = serviceArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.State_ClientBuild.find(filters)
-      .map(_.map(s => BuildClientServiceState(s.service, s.author, s.version, s.taskId, BuildState.withName(s.state))))
+    collections.State_ClientBuild.findSequenced(filters).map(_.map(
+      s => TimedBuildClientServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
+        s.document.service, s.document.author, s.document.version, s.document.task, BuildStatus.withName(s.document.status))))
   }
 
-  def getBuildClientHistory(service: Option[ServiceId], limit: Int): Future[Seq[TimedBuildClientServiceState]] = {
+  def getClientBuildsHistory(service: Option[ServiceId], limit: Int): Future[Seq[TimedBuildClientServiceState]] = {
     val serviceArg = service.map { service => Filters.eq("service", service) }
     val args = serviceArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.State_ClientBuild.history(filters, Some(limit))
       .map(_.map(s => TimedBuildClientServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
-        s.document.service, s.document.author, s.document.version, s.document.taskId, BuildState.withName(s.document.state))))
+        s.document.service, s.document.author, s.document.version, s.document.task, BuildStatus.withName(s.document.status))))
   }
 
   private def clearBuildDeveloperStates(): Future[Unit] = {
-    val filters = Filters.eq("state", BuildState.InProcess)
+    val filters = Filters.eq("state", BuildStatus.InProcess)
     collections.State_DeveloperBuild.update(filters, _ match {
-      case Some(state) => Some(state.copy(state = BuildState.Failure.toString))
+      case Some(state) => Some(state.copy(status = BuildStatus.Failure.toString))
       case None => None
     }).map(_ => Unit)
   }
 
   private def clearBuildClientStates(): Future[Unit] = {
-    val filters = Filters.eq("state", BuildState.InProcess)
+    val filters = Filters.eq("state", BuildStatus.InProcess)
     collections.State_ClientBuild.update(filters, _ match {
-      case Some(state) => Some(state.copy(state = BuildState.Failure.toString))
+      case Some(state) => Some(state.copy(status = BuildStatus.Failure.toString))
       case None => None
     }).map(_ => Unit)
   }
