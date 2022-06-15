@@ -14,7 +14,7 @@ import {
   useClientDesiredVersionsLazyQuery, useConsumerAccountsInfoQuery,
   useDeveloperDesiredVersionsLazyQuery,
   useInstalledDesiredVersionsLazyQuery,
-  useServiceStatesLazyQuery
+  useInstanceStatesLazyQuery
 } from "../../../../generated/graphql";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 
@@ -68,7 +68,7 @@ const Versions: React.FC<VersionsProps> = props => {
   const [getInstalledDesiredVersions, installedDesiredVersions] = useInstalledDesiredVersionsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
   })
-  const [getServiceStates, serviceStates] = useServiceStatesLazyQuery({
+  const [getInstanceStates, instanceStates] = useInstanceStatesLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
   })
 
@@ -76,10 +76,10 @@ const Versions: React.FC<VersionsProps> = props => {
     getDeveloperDesiredVersions()
     if (consumer) {
       getInstalledDesiredVersions({ variables: { distribution: consumer} })
-      getServiceStates({ variables: { distribution: consumer} })
+      getInstanceStates({ variables: { distribution: consumer} })
     } else {
       getClientDesiredVersions()
-      getServiceStates({ variables: { distribution: localStorage.getItem('distribution')! } })
+      getInstanceStates({ variables: { distribution: localStorage.getItem('distribution')! } })
     }
   }
 
@@ -130,7 +130,7 @@ const Versions: React.FC<VersionsProps> = props => {
             <VersionsTable
               developerVersions={developerDesiredVersions.data.developerDesiredVersions}
               clientVersions={consumer ? installedDesiredVersions.data?.installedDesiredVersions : clientDesiredVersions.data?.clientDesiredVersions}
-              serviceStates={serviceStates.data?.serviceStates}
+              instanceStates={instanceStates.data?.instanceStates}
               onlyAlerts={onlyAlerts}
             />
           : null }

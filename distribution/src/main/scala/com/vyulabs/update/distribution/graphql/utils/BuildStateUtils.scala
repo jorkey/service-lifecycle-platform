@@ -7,6 +7,7 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.info.BuildTarget.BuildTarget
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.distribution.mongo._
 import org.bson.BsonDocument
@@ -25,72 +26,41 @@ trait BuildStateUtils extends SprayJsonSupport {
 
   protected val config: DistributionConfig
 
-  clearBuildDeveloperStates()
-  clearBuildClientStates()
+  clearBuildStates()
 
-  def setBuildDeveloperState(state: BuildDeveloperServiceState): Future[Unit] = {
+  def setBuildState(state: BuildServiceState): Future[Unit] = {
     val filters = Filters.eq("service", state.service)
-    collections.State_DeveloperBuild.update(filters, _ => Some(
-      ServerBuildDeveloperServiceState(state.service, state.author, state.version, state.comment,
-        state.task, state.status.toString))).map(_ => Unit)
+    collections.State_Build.update(filters, _ => Some(
+      ServerBuildServiceState(state.service, state.targets.map(_.toString),
+        state.author, state.version, state.comment, state.task, state.status.toString))).map(_ => Unit)
   }
 
-  def getDeveloperBuilds(service: Option[ServiceId]): Future[Seq[TimedBuildDeveloperServiceState]] = {
+  def getBuildStates(service: Option[ServiceId], targets: Option[Seq[BuildTarget]]): Future[Seq[TimedBuildServiceState]] = {
     val serviceArg = service.map { service => Filters.eq("service", service) }
-    val args = serviceArg.toSeq
+    val targetsArg = targets.map { targets => Filters.or(targets.map(Filters.eq("targets", _)).asJava) }
+    val args = serviceArg.toSeq ++ targetsArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.State_DeveloperBuild.findSequenced(filters).map(_.map(
-      s => TimedBuildDeveloperServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
-        s.document.service, s.document.author, s.document.version,
+    collections.State_Build.findSequenced(filters).map(_.map(
+      s => TimedBuildServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
+        s.document.service, s.document.targets.map(BuildTarget.withName(_)), s.document.author, s.document.version,
         s.document.comment, s.document.task, BuildStatus.withName(s.document.status))))
   }
 
-  def getDeveloperBuildsHistory(service: Option[ServiceId], limit: Int): Future[Seq[TimedBuildDeveloperServiceState]] = {
+  def getBuildStatesHistory(service: Option[ServiceId], targets: Option[Seq[BuildTarget]], limit: Int)
+      : Future[Seq[TimedBuildServiceState]] = {
     val serviceArg = service.map { service => Filters.eq("service", service) }
-    val args = serviceArg.toSeq
+    val targetsArg = targets.map { targets => Filters.or(targets.map(Filters.eq("targets", _)).asJava) }
+    val args = serviceArg.toSeq ++ targetsArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.State_DeveloperBuild.history(filters, Some(limit)).map(_.map(
-      s => TimedBuildDeveloperServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
-        s.document.service, s.document.author, s.document.version,
+    collections.State_Build.history(filters, Some(limit)).map(_.map(
+      s => TimedBuildServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
+        s.document.service, s.document.targets.map(BuildTarget.withName(_)), s.document.author, s.document.version,
         s.document.comment, s.document.task, BuildStatus.withName(s.document.status))))
   }
 
-  def setBuildClientState(state: BuildClientServiceState): Future[Unit] = {
-    val filters = Filters.eq("service", state.service)
-    collections.State_ClientBuild.update(filters, _ => Some(
-      ServerBuildClientServiceState(state.service, state.author, state.version,
-        state.task, state.status.toString))).map(_ => Unit)
-  }
-
-  def getClientBuilds(service: Option[ServiceId]): Future[Seq[TimedBuildClientServiceState]] = {
-    val serviceArg = service.map { service => Filters.eq("service", service) }
-    val args = serviceArg.toSeq
-    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.State_ClientBuild.findSequenced(filters).map(_.map(
-      s => TimedBuildClientServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
-        s.document.service, s.document.author, s.document.version, s.document.task, BuildStatus.withName(s.document.status))))
-  }
-
-  def getClientBuildsHistory(service: Option[ServiceId], limit: Int): Future[Seq[TimedBuildClientServiceState]] = {
-    val serviceArg = service.map { service => Filters.eq("service", service) }
-    val args = serviceArg.toSeq
-    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.State_ClientBuild.history(filters, Some(limit))
-      .map(_.map(s => TimedBuildClientServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
-        s.document.service, s.document.author, s.document.version, s.document.task, BuildStatus.withName(s.document.status))))
-  }
-
-  private def clearBuildDeveloperStates(): Future[Unit] = {
+  private def clearBuildStates(): Future[Unit] = {
     val filters = Filters.eq("state", BuildStatus.InProcess)
-    collections.State_DeveloperBuild.update(filters, _ match {
-      case Some(state) => Some(state.copy(status = BuildStatus.Failure.toString))
-      case None => None
-    }).map(_ => Unit)
-  }
-
-  private def clearBuildClientStates(): Future[Unit] = {
-    val filters = Filters.eq("state", BuildStatus.InProcess)
-    collections.State_ClientBuild.update(filters, _ match {
+    collections.State_Build.update(filters, _ match {
       case Some(state) => Some(state.copy(status = BuildStatus.Failure.toString))
       case None => None
     }).map(_ => Unit)

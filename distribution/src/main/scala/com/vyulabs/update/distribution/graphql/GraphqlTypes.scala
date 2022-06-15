@@ -85,7 +85,8 @@ object GraphqlTypes {
   }
 
   implicit val AccountRoleType = deriveEnumType[AccountRole.AccountRole]()
-  implicit val BuildStateType = deriveEnumType[BuildStatus.BuildStatus]()
+  implicit val BuildTargetType = deriveEnumType[BuildTarget.BuildTarget]()
+  implicit val BuildStatusType = deriveEnumType[BuildStatus.BuildStatus]()
 
   implicit val ServicesProfileType = deriveObjectType[Unit, ServicesProfile]()
   implicit val GitConfigType = deriveObjectType[Unit, GitConfig]()
@@ -111,8 +112,7 @@ object GraphqlTypes {
   implicit val ServiceAccountInfoType = deriveObjectType[Unit, ServiceAccountInfo]()
   implicit val ConsumerAccountInfoType = deriveObjectType[Unit, ConsumerAccountInfo]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
-  implicit val BuildDeveloperServiceStateType = deriveObjectType[Unit, TimedBuildDeveloperServiceState]()
-  implicit val BuildClientServiceStateType = deriveObjectType[Unit, TimedBuildClientServiceState]()
+  implicit val BuildServiceStateType = deriveObjectType[Unit, TimedBuildServiceState]()
   implicit val InstanceStateType = deriveObjectType[Unit, InstanceState]()
   implicit val DirectoryInstanceStateType = deriveObjectType[Unit, DirectoryInstanceState]()
   implicit val AddressedInstanceStateType = deriveObjectType[Unit, AddressedInstanceState]()

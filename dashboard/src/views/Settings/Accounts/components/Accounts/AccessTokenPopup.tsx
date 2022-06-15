@@ -2,12 +2,7 @@ import React, {useState} from 'react';
 import Popover from '@material-ui/core/Popover';
 import {makeStyles} from '@material-ui/styles';
 import {Button, Grid, Table, TableBody, Typography} from '@material-ui/core';
-import TableCell from '@material-ui/core/TableCell';
-import InfoIcon from '@material-ui/icons/Info';
-import AlertIcon from '@material-ui/icons/Error';
-import TableRow from '@material-ui/core/TableRow';
-import {ServiceState, useAccessTokenQuery} from '../../../../../generated/graphql';
-import {Version} from '../../../../../common';
+import {useAccessTokenQuery} from '../../../../../generated/graphql';
 import AccessTokenIcon from "@material-ui/icons/VpnKey";
 
 const useStyles = makeStyles(theme => ({

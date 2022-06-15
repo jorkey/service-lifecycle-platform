@@ -121,27 +121,15 @@ mutation setClientDesiredVersions ($versions: [ClientDesiredVersionDeltaInput!]!
 
 # States
 
-query developerBuilds ($service: String) {
-    developerBuilds (service: $service) {
-        time, service, author, version { build }, comment, task, status
+query buildStates ($service: String, $targets: [BuildTarget!]) {
+    buildStates (service: $service, targets: $targets) {
+        time, service, targets, author, version, comment, task, status
     }
 }
 
-query developerBuildsHistory ($service: String, $limit: Int!) {
-    developerBuildsHistory (service: $service, limit: $limit) {
-        time, service, author, version { build }, comment, task, status
-    }
-}
-
-query clientBuilds ($service: String) {
-    clientBuilds (service: $service) {
-        time, service, author, version { build }, task, status
-    }
-}
-
-query clientBuildsHistory ($service: String, $limit: Int!) {
-    clientBuildsHistory (service: $service, limit: $limit) {
-        time, service, author, version { build }, task, status
+query buildStatesHistory ($service: String, $targets: [BuildTarget!], $limit: Int!) {
+    buildStatesHistory (service: $service, targets: $targets, limit: $limit) {
+        time, service, targets, author, version, comment, task, status
     }
 }
 

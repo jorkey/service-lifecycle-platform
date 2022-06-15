@@ -7,7 +7,7 @@ import {Info} from './ServiceState';
 import {
   ClientDesiredVersion, ClientDistributionVersion,
   DeveloperDesiredVersion,
-  DeveloperDistributionVersion, DistributionServiceState,
+  DeveloperDistributionVersion, DistributionInstanceState,
 } from "../../../../generated/graphql";
 
 // eslint-disable-next-line no-unused-vars
@@ -37,32 +37,32 @@ interface ServiceVersionsProps {
   service: string
   developerVersion: DeveloperDistributionVersion
   clientVersion: ClientDistributionVersion|undefined
-  serviceStates: Array<DistributionServiceState>|undefined
+  serviceStates: Array<DistributionInstanceState>|undefined
   onlyAlerts: Boolean
 }
 
 export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
   const { service, developerVersion, clientVersion, serviceStates, onlyAlerts } = props;
   const classes = useStyles();
-  let versionsTree = new Array<[ClientDistributionVersion, Array<[string, Array<DistributionServiceState>]>]>()
+  let versionsTree = new Array<[ClientDistributionVersion, Array<[string, Array<DistributionInstanceState>]>]>()
   serviceStates?.forEach(state => {
     if (state.state.version) {
       let versionNode = versionsTree.find(node => node[0] === state.state.version)
       if (!versionNode) {
-        versionNode = [state.state.version, new Array<[string, Array<DistributionServiceState>]>()]
+        versionNode = [state.state.version, new Array<[string, Array<DistributionInstanceState>]>()]
         versionsTree.push(versionNode)
       }
       let directoriesNode = versionNode[1]
       let directoryNode = directoriesNode.find(node => node[0] === state.directory)
       if (!directoryNode) {
-        directoryNode = [state.directory, new Array<DistributionServiceState>()]
+        directoryNode = [state.directory, new Array<DistributionInstanceState>()]
         directoriesNode.push(directoryNode)
       }
       directoryNode[1].push(state)
     } })
   let versionIndex = versionsTree.length, version:ClientDistributionVersion|undefined = undefined
-  let directories = new Array<[string, Array<DistributionServiceState>]>(), directoryIndex = 0, directory:string|undefined = undefined
-  let states = new Array<DistributionServiceState>(), stateIndex = 0, state:DistributionServiceState|undefined = undefined
+  let directories = new Array<[string, Array<DistributionInstanceState>]>(), directoryIndex = 0, directory:string|undefined = undefined
+  let states = new Array<DistributionInstanceState>(), stateIndex = 0, state:DistributionInstanceState|undefined = undefined
   let rows = []
   let rowsStack = []
   let alertService = false
@@ -162,7 +162,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
         <TableCell className={classes.infoColumn}>
           <Info
             alert={workingVersionAlarm}
-            serviceState={state.state}
+            instanceState={state.state}
           />
         </TableCell> : <TableCell className={classes.infoColumn}/>}
     </TableRow>)
@@ -173,12 +173,12 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
 interface VersionsTableProps {
   developerVersions: Array<DeveloperDesiredVersion>
   clientVersions: Array<ClientDesiredVersion>|undefined
-  serviceStates: Array<DistributionServiceState>|undefined
+  instanceStates: Array<DistributionInstanceState>|undefined
   onlyAlerts: Boolean
 }
 
 export const VersionsTable: React.FC<VersionsTableProps> = props => {
-  const {developerVersions, clientVersions, serviceStates, onlyAlerts} = props
+  const {developerVersions, clientVersions, instanceStates, onlyAlerts} = props
   const classes = useStyles()
 
   return (<Table stickyHeader>
@@ -199,7 +199,7 @@ export const VersionsTable: React.FC<VersionsTableProps> = props => {
           service={desiredVersion.service}
           developerVersion={desiredVersion.version}
           clientVersion={clientVersions?.find(version => version.service === desiredVersion.service)?.version}
-          serviceStates={serviceStates?.filter(state => state.service === desiredVersion.service)}
+          serviceStates={instanceStates?.filter(state => state.service === desiredVersion.service)}
           onlyAlerts={onlyAlerts}
           key={desiredVersion.service}
         />) }

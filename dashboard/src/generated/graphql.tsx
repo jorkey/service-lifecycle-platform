@@ -67,6 +67,11 @@ export enum BuildStatus {
   InProcess = 'InProcess'
 }
 
+export enum BuildTarget {
+  ClientVersion = 'ClientVersion',
+  DeveloperVersion = 'DeveloperVersion'
+}
+
 export type ClientDesiredVersion = {
   __typename?: 'ClientDesiredVersion';
   service: Scalars['String'];
@@ -160,11 +165,6 @@ export type DeveloperDistributionVersion = {
 
 export type DeveloperDistributionVersionInput = {
   distribution: Scalars['String'];
-  build: Array<Scalars['Int']>;
-};
-
-export type DeveloperVersion = {
-  __typename?: 'DeveloperVersion';
   build: Array<Scalars['Int']>;
 };
 
@@ -621,10 +621,8 @@ export type Query = {
   providerDesiredVersions: Array<DeveloperDesiredVersion>;
   providerTestedVersions: Array<DeveloperDesiredVersion>;
   installedDesiredVersions: Array<ClientDesiredVersion>;
-  developerBuilds: Array<TimedBuildDeveloperServiceState>;
-  developerBuildsHistory: Array<TimedBuildDeveloperServiceState>;
-  clientBuilds: Array<TimedBuildClientServiceState>;
-  clientBuildsHistory: Array<TimedBuildClientServiceState>;
+  buildStates: Array<TimedBuildServiceState>;
+  buildStatesHistory: Array<TimedBuildServiceState>;
   instanceStates: Array<DistributionInstanceState>;
   logServices: Array<Scalars['String']>;
   logInstances: Array<Scalars['String']>;
@@ -736,24 +734,15 @@ export type QueryInstalledDesiredVersionsArgs = {
 };
 
 
-export type QueryDeveloperBuildsArgs = {
+export type QueryBuildStatesArgs = {
   service?: Maybe<Scalars['String']>;
+  buildTargets?: Maybe<Array<BuildTarget>>;
 };
 
 
-export type QueryDeveloperBuildsHistoryArgs = {
+export type QueryBuildStatesHistoryArgs = {
   service?: Maybe<Scalars['String']>;
-  limit: Scalars['Int'];
-};
-
-
-export type QueryClientBuildsArgs = {
-  service?: Maybe<Scalars['String']>;
-};
-
-
-export type QueryClientBuildsHistoryArgs = {
-  service?: Maybe<Scalars['String']>;
+  buildTargets?: Maybe<Array<BuildTarget>>;
   limit: Scalars['Int'];
 };
 
@@ -956,22 +945,13 @@ export type TaskParameterInput = {
   value: Scalars['String'];
 };
 
-export type TimedBuildClientServiceState = {
-  __typename?: 'TimedBuildClientServiceState';
+export type TimedBuildServiceState = {
+  __typename?: 'TimedBuildServiceState';
   time: Scalars['Date'];
   service: Scalars['String'];
+  targets: Array<BuildTarget>;
   author: Scalars['String'];
-  version: DeveloperDistributionVersion;
-  task: Scalars['String'];
-  status: BuildStatus;
-};
-
-export type TimedBuildDeveloperServiceState = {
-  __typename?: 'TimedBuildDeveloperServiceState';
-  time: Scalars['Date'];
-  service: Scalars['String'];
-  author: Scalars['String'];
-  version: DeveloperVersion;
+  version: Scalars['String'];
   comment: Scalars['String'];
   task: Scalars['String'];
   status: BuildStatus;
@@ -1390,73 +1370,32 @@ export type SetClientDesiredVersionsMutation = (
   & Pick<Mutation, 'setClientDesiredVersions'>
 );
 
-export type DeveloperBuildsQueryVariables = Exact<{
+export type BuildStatesQueryVariables = Exact<{
   service?: Maybe<Scalars['String']>;
+  targets?: Maybe<Array<BuildTarget> | BuildTarget>;
 }>;
 
 
-export type DeveloperBuildsQuery = (
+export type BuildStatesQuery = (
   { __typename?: 'Query' }
-  & { developerBuilds: Array<(
-    { __typename?: 'TimedBuildDeveloperServiceState' }
-    & Pick<TimedBuildDeveloperServiceState, 'time' | 'service' | 'author' | 'comment' | 'task' | 'status'>
-    & { version: (
-      { __typename?: 'DeveloperVersion' }
-      & Pick<DeveloperVersion, 'build'>
-    ) }
+  & { buildStates: Array<(
+    { __typename?: 'TimedBuildServiceState' }
+    & Pick<TimedBuildServiceState, 'time' | 'service' | 'targets' | 'author' | 'version' | 'comment' | 'task' | 'status'>
   )> }
 );
 
-export type DeveloperBuildsHistoryQueryVariables = Exact<{
+export type BuildStatesHistoryQueryVariables = Exact<{
   service?: Maybe<Scalars['String']>;
+  targets?: Maybe<Array<BuildTarget> | BuildTarget>;
   limit: Scalars['Int'];
 }>;
 
 
-export type DeveloperBuildsHistoryQuery = (
+export type BuildStatesHistoryQuery = (
   { __typename?: 'Query' }
-  & { developerBuildsHistory: Array<(
-    { __typename?: 'TimedBuildDeveloperServiceState' }
-    & Pick<TimedBuildDeveloperServiceState, 'time' | 'service' | 'author' | 'comment' | 'task' | 'status'>
-    & { version: (
-      { __typename?: 'DeveloperVersion' }
-      & Pick<DeveloperVersion, 'build'>
-    ) }
-  )> }
-);
-
-export type ClientBuildsQueryVariables = Exact<{
-  service?: Maybe<Scalars['String']>;
-}>;
-
-
-export type ClientBuildsQuery = (
-  { __typename?: 'Query' }
-  & { clientBuilds: Array<(
-    { __typename?: 'TimedBuildClientServiceState' }
-    & Pick<TimedBuildClientServiceState, 'time' | 'service' | 'author' | 'task' | 'status'>
-    & { version: (
-      { __typename?: 'DeveloperDistributionVersion' }
-      & Pick<DeveloperDistributionVersion, 'build'>
-    ) }
-  )> }
-);
-
-export type ClientBuildsHistoryQueryVariables = Exact<{
-  service?: Maybe<Scalars['String']>;
-  limit: Scalars['Int'];
-}>;
-
-
-export type ClientBuildsHistoryQuery = (
-  { __typename?: 'Query' }
-  & { clientBuildsHistory: Array<(
-    { __typename?: 'TimedBuildClientServiceState' }
-    & Pick<TimedBuildClientServiceState, 'time' | 'service' | 'author' | 'task' | 'status'>
-    & { version: (
-      { __typename?: 'DeveloperDistributionVersion' }
-      & Pick<DeveloperDistributionVersion, 'build'>
-    ) }
+  & { buildStatesHistory: Array<(
+    { __typename?: 'TimedBuildServiceState' }
+    & Pick<TimedBuildServiceState, 'time' | 'service' | 'targets' | 'author' | 'version' | 'comment' | 'task' | 'status'>
   )> }
 );
 
@@ -3228,15 +3167,14 @@ export function useSetClientDesiredVersionsMutation(baseOptions?: Apollo.Mutatio
 export type SetClientDesiredVersionsMutationHookResult = ReturnType<typeof useSetClientDesiredVersionsMutation>;
 export type SetClientDesiredVersionsMutationResult = Apollo.MutationResult<SetClientDesiredVersionsMutation>;
 export type SetClientDesiredVersionsMutationOptions = Apollo.BaseMutationOptions<SetClientDesiredVersionsMutation, SetClientDesiredVersionsMutationVariables>;
-export const DeveloperBuildsDocument = gql`
-    query developerBuilds($service: String) {
-  developerBuilds(service: $service) {
+export const BuildStatesDocument = gql`
+    query buildStates($service: String, $targets: [BuildTarget!]) {
+  buildStates(service: $service, buildTargets: $targets) {
     time
     service
+    targets
     author
-    version {
-      build
-    }
+    version
     comment
     task
     status
@@ -3245,41 +3183,41 @@ export const DeveloperBuildsDocument = gql`
     `;
 
 /**
- * __useDeveloperBuildsQuery__
+ * __useBuildStatesQuery__
  *
- * To run a query within a React component, call `useDeveloperBuildsQuery` and pass it any options that fit your needs.
- * When your component renders, `useDeveloperBuildsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useBuildStatesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useBuildStatesQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useDeveloperBuildsQuery({
+ * const { data, loading, error } = useBuildStatesQuery({
  *   variables: {
  *      service: // value for 'service'
+ *      targets: // value for 'targets'
  *   },
  * });
  */
-export function useDeveloperBuildsQuery(baseOptions?: Apollo.QueryHookOptions<DeveloperBuildsQuery, DeveloperBuildsQueryVariables>) {
+export function useBuildStatesQuery(baseOptions?: Apollo.QueryHookOptions<BuildStatesQuery, BuildStatesQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<DeveloperBuildsQuery, DeveloperBuildsQueryVariables>(DeveloperBuildsDocument, options);
+        return Apollo.useQuery<BuildStatesQuery, BuildStatesQueryVariables>(BuildStatesDocument, options);
       }
-export function useDeveloperBuildsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<DeveloperBuildsQuery, DeveloperBuildsQueryVariables>) {
+export function useBuildStatesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<BuildStatesQuery, BuildStatesQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<DeveloperBuildsQuery, DeveloperBuildsQueryVariables>(DeveloperBuildsDocument, options);
+          return Apollo.useLazyQuery<BuildStatesQuery, BuildStatesQueryVariables>(BuildStatesDocument, options);
         }
-export type DeveloperBuildsQueryHookResult = ReturnType<typeof useDeveloperBuildsQuery>;
-export type DeveloperBuildsLazyQueryHookResult = ReturnType<typeof useDeveloperBuildsLazyQuery>;
-export type DeveloperBuildsQueryResult = Apollo.QueryResult<DeveloperBuildsQuery, DeveloperBuildsQueryVariables>;
-export const DeveloperBuildsHistoryDocument = gql`
-    query developerBuildsHistory($service: String, $limit: Int!) {
-  developerBuildsHistory(service: $service, limit: $limit) {
+export type BuildStatesQueryHookResult = ReturnType<typeof useBuildStatesQuery>;
+export type BuildStatesLazyQueryHookResult = ReturnType<typeof useBuildStatesLazyQuery>;
+export type BuildStatesQueryResult = Apollo.QueryResult<BuildStatesQuery, BuildStatesQueryVariables>;
+export const BuildStatesHistoryDocument = gql`
+    query buildStatesHistory($service: String, $targets: [BuildTarget!], $limit: Int!) {
+  buildStatesHistory(service: $service, buildTargets: $targets, limit: $limit) {
     time
     service
+    targets
     author
-    version {
-      build
-    }
+    version
     comment
     task
     status
@@ -3288,118 +3226,34 @@ export const DeveloperBuildsHistoryDocument = gql`
     `;
 
 /**
- * __useDeveloperBuildsHistoryQuery__
+ * __useBuildStatesHistoryQuery__
  *
- * To run a query within a React component, call `useDeveloperBuildsHistoryQuery` and pass it any options that fit your needs.
- * When your component renders, `useDeveloperBuildsHistoryQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useBuildStatesHistoryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useBuildStatesHistoryQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useDeveloperBuildsHistoryQuery({
+ * const { data, loading, error } = useBuildStatesHistoryQuery({
  *   variables: {
  *      service: // value for 'service'
+ *      targets: // value for 'targets'
  *      limit: // value for 'limit'
  *   },
  * });
  */
-export function useDeveloperBuildsHistoryQuery(baseOptions: Apollo.QueryHookOptions<DeveloperBuildsHistoryQuery, DeveloperBuildsHistoryQueryVariables>) {
+export function useBuildStatesHistoryQuery(baseOptions: Apollo.QueryHookOptions<BuildStatesHistoryQuery, BuildStatesHistoryQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<DeveloperBuildsHistoryQuery, DeveloperBuildsHistoryQueryVariables>(DeveloperBuildsHistoryDocument, options);
+        return Apollo.useQuery<BuildStatesHistoryQuery, BuildStatesHistoryQueryVariables>(BuildStatesHistoryDocument, options);
       }
-export function useDeveloperBuildsHistoryLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<DeveloperBuildsHistoryQuery, DeveloperBuildsHistoryQueryVariables>) {
+export function useBuildStatesHistoryLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<BuildStatesHistoryQuery, BuildStatesHistoryQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<DeveloperBuildsHistoryQuery, DeveloperBuildsHistoryQueryVariables>(DeveloperBuildsHistoryDocument, options);
+          return Apollo.useLazyQuery<BuildStatesHistoryQuery, BuildStatesHistoryQueryVariables>(BuildStatesHistoryDocument, options);
         }
-export type DeveloperBuildsHistoryQueryHookResult = ReturnType<typeof useDeveloperBuildsHistoryQuery>;
-export type DeveloperBuildsHistoryLazyQueryHookResult = ReturnType<typeof useDeveloperBuildsHistoryLazyQuery>;
-export type DeveloperBuildsHistoryQueryResult = Apollo.QueryResult<DeveloperBuildsHistoryQuery, DeveloperBuildsHistoryQueryVariables>;
-export const ClientBuildsDocument = gql`
-    query clientBuilds($service: String) {
-  clientBuilds(service: $service) {
-    time
-    service
-    author
-    version {
-      build
-    }
-    task
-    status
-  }
-}
-    `;
-
-/**
- * __useClientBuildsQuery__
- *
- * To run a query within a React component, call `useClientBuildsQuery` and pass it any options that fit your needs.
- * When your component renders, `useClientBuildsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useClientBuildsQuery({
- *   variables: {
- *      service: // value for 'service'
- *   },
- * });
- */
-export function useClientBuildsQuery(baseOptions?: Apollo.QueryHookOptions<ClientBuildsQuery, ClientBuildsQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<ClientBuildsQuery, ClientBuildsQueryVariables>(ClientBuildsDocument, options);
-      }
-export function useClientBuildsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ClientBuildsQuery, ClientBuildsQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<ClientBuildsQuery, ClientBuildsQueryVariables>(ClientBuildsDocument, options);
-        }
-export type ClientBuildsQueryHookResult = ReturnType<typeof useClientBuildsQuery>;
-export type ClientBuildsLazyQueryHookResult = ReturnType<typeof useClientBuildsLazyQuery>;
-export type ClientBuildsQueryResult = Apollo.QueryResult<ClientBuildsQuery, ClientBuildsQueryVariables>;
-export const ClientBuildsHistoryDocument = gql`
-    query clientBuildsHistory($service: String, $limit: Int!) {
-  clientBuildsHistory(service: $service, limit: $limit) {
-    time
-    service
-    author
-    version {
-      build
-    }
-    task
-    status
-  }
-}
-    `;
-
-/**
- * __useClientBuildsHistoryQuery__
- *
- * To run a query within a React component, call `useClientBuildsHistoryQuery` and pass it any options that fit your needs.
- * When your component renders, `useClientBuildsHistoryQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useClientBuildsHistoryQuery({
- *   variables: {
- *      service: // value for 'service'
- *      limit: // value for 'limit'
- *   },
- * });
- */
-export function useClientBuildsHistoryQuery(baseOptions: Apollo.QueryHookOptions<ClientBuildsHistoryQuery, ClientBuildsHistoryQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<ClientBuildsHistoryQuery, ClientBuildsHistoryQueryVariables>(ClientBuildsHistoryDocument, options);
-      }
-export function useClientBuildsHistoryLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ClientBuildsHistoryQuery, ClientBuildsHistoryQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<ClientBuildsHistoryQuery, ClientBuildsHistoryQueryVariables>(ClientBuildsHistoryDocument, options);
-        }
-export type ClientBuildsHistoryQueryHookResult = ReturnType<typeof useClientBuildsHistoryQuery>;
-export type ClientBuildsHistoryLazyQueryHookResult = ReturnType<typeof useClientBuildsHistoryLazyQuery>;
-export type ClientBuildsHistoryQueryResult = Apollo.QueryResult<ClientBuildsHistoryQuery, ClientBuildsHistoryQueryVariables>;
+export type BuildStatesHistoryQueryHookResult = ReturnType<typeof useBuildStatesHistoryQuery>;
+export type BuildStatesHistoryLazyQueryHookResult = ReturnType<typeof useBuildStatesHistoryLazyQuery>;
+export type BuildStatesHistoryQueryResult = Apollo.QueryResult<BuildStatesHistoryQuery, BuildStatesHistoryQueryVariables>;
 export const InstanceStatesDocument = gql`
     query instanceStates($distribution: String!) {
   instanceStates(distribution: $distribution) {

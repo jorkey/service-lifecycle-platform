@@ -122,9 +122,10 @@ object GraphqlSchema {
   val OptionUploadStateArg = Argument("uploadState", OptionInputType(BooleanType))
   val OptionAutoUpdateArg = Argument("autoUpdate", OptionInputType(BooleanType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
-  val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
   val OptionOnlyActiveArg = Argument("onlyActive", OptionInputType(BooleanType))
   val OptionEnvironmentArg = Argument("environment", OptionInputType(ListInputType(NamedStringValueInputType)))
+  val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
+  val OptionBuildTargetsArg = Argument("targets", OptionInputType(ListInputType(BuildTargetType)))
 
   // Queries
 
@@ -250,25 +251,17 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getConsumerInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       // State
-      Field("developerBuilds", ListType(BuildDeveloperServiceStateType),
-        arguments = OptionServiceArg :: Nil,
+      Field("buildStates", ListType(BuildServiceStateType),
+        arguments = OptionServiceArg :: OptionBuildTargetsArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperBuilds(c.arg(OptionServiceArg)) }),
+        resolve = c => { c.ctx.workspace.getBuildStates(c.arg(OptionServiceArg),
+          c.arg(OptionBuildTargetsArg)) }),
 
-      Field("developerBuildsHistory", ListType(BuildDeveloperServiceStateType),
-        arguments = OptionServiceArg :: LimitArg :: Nil,
+      Field("buildStatesHistory", ListType(BuildServiceStateType),
+        arguments = OptionServiceArg :: OptionBuildTargetsArg :: LimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperBuildsHistory(c.arg(OptionServiceArg), c.arg(LimitArg)) }),
-
-      Field("clientBuilds", ListType(BuildClientServiceStateType),
-        arguments = OptionServiceArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientBuilds(c.arg(OptionServiceArg)) }),
-
-      Field("clientBuildsHistory", ListType(BuildClientServiceStateType),
-        arguments = OptionServiceArg :: LimitArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientBuildsHistory(c.arg(OptionServiceArg), c.arg(LimitArg)) }),
+        resolve = c => { c.ctx.workspace.getBuildStatesHistory(c.arg(OptionServiceArg),
+          c.arg(OptionBuildTargetsArg), c.arg(LimitArg)) }),
 
       Field("instanceStates", ListType(DistributionServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,

@@ -2,11 +2,21 @@ package com.vyulabs.update.common.info
 
 import com.vyulabs.update.common.common.Common.{AccountId, ServiceId, TaskId}
 import com.vyulabs.update.common.info.BuildStatus.BuildStatus
+import com.vyulabs.update.common.info.BuildTarget.BuildTarget
 import com.vyulabs.update.common.utils.JsonFormats._
-import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, RootJsonFormat}
 
 import java.util.Date
+
+object BuildTarget extends Enumeration {
+  type BuildTarget = Value
+  val DeveloperVersion, ClientVersion = Value
+
+  implicit object BuildTargetJsonFormat extends RootJsonFormat[BuildTarget] {
+    def write(value: BuildTarget) = JsString(value.toString)
+    def read(value: JsValue) = withName(value.asInstanceOf[JsString].value)
+  }
+}
 
 object BuildStatus extends Enumeration {
   type BuildStatus = Value
@@ -18,38 +28,22 @@ object BuildStatus extends Enumeration {
   }
 }
 
-case class BuildDeveloperServiceState(service: ServiceId, author: AccountId,
-                                      version: DeveloperVersion, comment: String,
-                                      task: TaskId, status: BuildStatus)
+case class BuildServiceState(service: ServiceId, targets: Seq[BuildTarget],
+                             author: AccountId, version: String, comment: String,
+                             task: TaskId, status: BuildStatus)
 
-object BuildDeveloperServiceState extends DefaultJsonProtocol {
-  implicit val buildDeveloperServiceStateJson = jsonFormat6(BuildDeveloperServiceState.apply)
+object BuildServiceState extends DefaultJsonProtocol {
+  implicit val buildDeveloperServiceStateJson = jsonFormat7(BuildServiceState.apply)
 }
 
-case class ServerBuildDeveloperServiceState(service: ServiceId, author: AccountId,
-                                            version: DeveloperVersion, comment: String,
-                                            task: TaskId, status: String)
+case class ServerBuildServiceState(service: ServiceId, targets: Seq[String],
+                                   author: AccountId, version: String, comment: String,
+                                   task: TaskId, status: String)
 
-case class TimedBuildDeveloperServiceState(time: Date, service: ServiceId, author: AccountId, version: DeveloperVersion,
-                                           comment: String, task: TaskId, status: BuildStatus)
+case class TimedBuildServiceState(time: Date, service: ServiceId, targets: Seq[BuildTarget],
+                                  author: AccountId, version: String,
+                                  comment: String, task: TaskId, status: BuildStatus)
 
-object TimedBuildDeveloperServiceState extends DefaultJsonProtocol {
-  implicit val buildDeveloperServiceStateJson = jsonFormat7(TimedBuildDeveloperServiceState.apply)
-}
-
-case class BuildClientServiceState(service: ServiceId, author: AccountId, version: DeveloperDistributionVersion,
-                                   task: TaskId, status: BuildStatus)
-
-object BuildClientServiceState extends DefaultJsonProtocol {
-  implicit val buildClientServiceStateJson = jsonFormat5(BuildClientServiceState.apply)
-}
-
-case class ServerBuildClientServiceState(service: ServiceId, author: AccountId,
-                                         version: DeveloperDistributionVersion, task: TaskId, status: String)
-
-case class TimedBuildClientServiceState(time: Date, service: ServiceId, author: AccountId, version: DeveloperDistributionVersion,
-                                        task: TaskId, status: BuildStatus)
-
-object TimedBuildClientServiceState extends DefaultJsonProtocol {
-  implicit val buildClientServiceStateJson = jsonFormat6(TimedBuildClientServiceState.apply)
+object TimedBuildServiceState extends DefaultJsonProtocol {
+  implicit val buildDeveloperServiceStateJson = jsonFormat8(TimedBuildServiceState.apply)
 }

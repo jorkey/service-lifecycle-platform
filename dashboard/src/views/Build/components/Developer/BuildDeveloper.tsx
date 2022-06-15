@@ -6,8 +6,8 @@ import {
   CardContent, CardHeader,
 } from '@material-ui/core';
 import {
-  useBuildDeveloperServicesQuery,
-  useDeveloperVersionsInfoQuery, useTasksQuery
+  BuildStatus,
+  useBuildDeveloperServicesQuery, useClientBuildsQuery, useDeveloperBuildsQuery,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -66,24 +66,22 @@ const BuildDeveloper = () => {
     onError(err) { setError('Query developer services error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-  const { data: completedVersions, refetch: getCompletedVersions } = useDeveloperVersionsInfoQuery({
+  const { data: developerBuilds, refetch: getDeveloperBuilds } = useDeveloperBuildsQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    onError(err) { setError('Query developer versions error ' + err.message) },
+    onError(err) { setError('Query developer builds error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-  const { data: tasksInProcess, refetch: getTasksInProcess } = useTasksQuery({
+  const { data: clientBuilds, refetch: getClientDeveloperBuilds } = useClientBuildsQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    variables: { type: 'BuildDeveloperVersion', onlyActive: true },
-    onError(err) { setError('Query developer versions in process error ' + err.message) },
+    onError(err) { setError('Query client builds error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const handleOnClick = useCallback((service: string) => {
-    const task = tasksInProcess?.tasks.find(task => task.parameters.find(p => {
-        return p.name == 'service' && p.value == service }))
-    return task ? history.push('developer/monitor/' + task.task) :
+    const task = developerBuilds?.developerBuilds.find(build => build.service == service)?.task
+    return task ? history.push('developer/monitor/' + task) :
       history.push('developer/start/' + service)
-  }, [ tasksInProcess, history ]);
+  }, [ developerBuilds, history ]);
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -113,8 +111,13 @@ const BuildDeveloper = () => {
       className: classes.commentColumn,
     },
     {
-      name: 'status',
-      headerName: 'Status',
+      name: 'developerStatus',
+      headerName: 'Developer Status',
+      className: classes.statusColumn,
+    },
+    {
+      name: 'clientStatus',
+      headerName: 'Client Status',
       className: classes.statusColumn,
     },
     {
@@ -127,29 +130,18 @@ const BuildDeveloper = () => {
 
   const rows = services?.buildDeveloperServicesConfig.map(s => s.service).sort().map(
     service => {
-      const versionInProcess = tasksInProcess?.tasks.find(task => task.parameters.find(p => {
-        return p.name == 'service' && p.value == service }))
-      const completedVersion = completedVersions?.developerVersionsInfo?.filter(version => version.service == service)
-        .sort((v1, v2) => v1.buildInfo.time.getTime() > v2.buildInfo.time.getTime() ? -1 : 1)[0]
-      const version = versionInProcess?versionInProcess.parameters.find(p => p.name == 'version')?.value:
-        completedVersion?Version.buildToString(completedVersion.version.build):undefined
-      const author = versionInProcess?versionInProcess.parameters.find(p => p.name == 'author')?.value:
-        completedVersion?completedVersion.buildInfo.author:undefined
-      const time = versionInProcess?versionInProcess.creationTime:
-        completedVersion?completedVersion.buildInfo.time:undefined
-      const comment = versionInProcess?versionInProcess.parameters.find(p => p.name == 'comment')?.value:
-        completedVersion?completedVersion.buildInfo.comment:undefined
-      const status = versionInProcess?'In Process':
-        completedVersion?'Completed':undefined
+      const developerState = developerBuilds?.developerBuilds.find(build => build.service == service)
+      const clientState = clientBuilds?.clientBuilds.find(build => build.service == service)
       return new Map<string, GridTableCellParams>([
-          ['service', { value: service }],
-          ['version', { value: version }],
-          ['author', { value: author }],
-          ['time', { value: time }],
-          ['comment', { value: comment }],
-          ['status', { value: status }],
+          ['service', { value: developerState?developerState.service:'' }],
+          ['version', { value: developerState?Version.buildToString(developerState.version.build):'' }],
+          ['author', { value: developerState?developerState.author:'' }],
+          ['time', { value: developerState?developerState.time:'' }],
+          ['comment', { value: developerState?developerState.comment:'' }],
+          ['developerStatus', { value: developerState?developerState.status.toString():'' }],
+          ['clientStatus', { value: clientState?clientState.status.toString():'' }],
           ['actions', { value: [<Button key='0' title='Start Build' onClick={ () => handleOnClick(service) }>
-            {versionInProcess?<VisibilityIcon/>:<BuildIcon/>}
+            {developerState?.status == BuildStatus.InProcess?<VisibilityIcon/>:<BuildIcon/>}
           </Button>] }]
         ])
     })
@@ -161,7 +153,7 @@ const BuildDeveloper = () => {
           <FormGroup row>
             <RefreshControl
               className={classes.control}
-              refresh={ () => { getServices(); getTasksInProcess(); getCompletedVersions() }}
+              refresh={ () => { getServices(); getDeveloperBuilds() }}
             />
           </FormGroup>
         }

@@ -47,9 +47,13 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
       Seq(service),
       (task, logger) => {
         implicit val log = logger
-        val state = BuildDeveloperServiceState(service, author, version, comment, task, BuildStatus.InProcess)
+        var targets = Seq(BuildTarget.DeveloperVersion)
+        if (buildClientVersion) {
+          targets :+= BuildTarget.ClientVersion
+        }
+        val state = BuildServiceState(service,  targets, author, version.toString, comment, task, BuildStatus.InProcess)
         @volatile var cancel = Option.empty[() => Unit]
-        val future = buildStateUtils.setBuildDeveloperState(state)
+        val future = buildStateUtils.setBuildState(state)
           .flatMap { _ =>
             val arguments = Seq("buildDeveloperVersion",
               s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}",
@@ -76,9 +80,9 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           }
           .andThen {
             case Success(_) =>
-              buildStateUtils.setBuildDeveloperState(state.copy(status = BuildStatus.Success))
+              buildStateUtils.setBuildState(state.copy(status = BuildStatus.Success))
             case Failure(_) =>
-              buildStateUtils.setBuildDeveloperState(state.copy(status = BuildStatus.Failure))
+              buildStateUtils.setBuildState(state.copy(status = BuildStatus.Failure))
           }
         (future, Some(() => cancel.foreach(_.apply())))
       }).map(_.taskId)

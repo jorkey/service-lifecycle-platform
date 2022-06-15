@@ -6,7 +6,7 @@ import TableCell from '@material-ui/core/TableCell';
 import InfoIcon from '@material-ui/icons/Info';
 import AlertIcon from '@material-ui/icons/Error';
 import TableRow from '@material-ui/core/TableRow';
-import {ServiceState} from '../../../../generated/graphql';
+import {InstanceState} from '../../../../generated/graphql';
 import {Version} from '../../../../common';
 
 const useStyles = makeStyles(theme => ({
@@ -32,11 +32,11 @@ const useStyles = makeStyles(theme => ({
 
 interface InfoProps {
   alert: boolean,
-  serviceState: ServiceState
+  instanceState: InstanceState
 }
 
 export const Info: React.FC<InfoProps> = (props) => {
-  const { alert, serviceState } = props
+  const { alert, instanceState } = props
   const classes = useStyles()
 
   const [anchor, setAnchor] = React.useState<Element>()
@@ -56,14 +56,14 @@ export const Info: React.FC<InfoProps> = (props) => {
         />}
       <ServiceStatePopup
         anchor={anchor}
-        state={serviceState}
+        state={instanceState}
       />
     </>)
 }
 
 interface ServiceStateProps {
   anchor: Element|undefined,
-  state: ServiceState
+  state: InstanceState
 }
 
 export const ServiceStatePopup: React.FC<ServiceStateProps> = (props) => {
