@@ -29,7 +29,7 @@ class BuildClientVersionTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
 
   result(for {
-    _ <- collections.Developer_BuildServices.insert(BuildServiceConfig("service1", None, Seq.empty, Seq.empty, Seq.empty, Seq.empty))
+    _ <- collections.Developer_Services.insert(BuildServiceConfig("service1", None, Seq.empty, Seq.empty, Seq.empty, Seq.empty))
   } yield {})
 
   IoUtils.writeBytesToFile(new File(builderDirectory, "builder.sh"),

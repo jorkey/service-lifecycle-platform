@@ -3,7 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId}
+import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId}
 import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, MongoDbConfig, Repository}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
@@ -81,8 +81,10 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
           Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.BuilderServiceName, Common.UpdaterServiceName)) ||
         !setClientBuilderConfig(distribution) ||
         !generateAndUploadInitialVersions(buildInfo, author) ||
-        !addCommonServicesProfile() ||
-        !addOwnServicesProfile()) {
+        !addProfile(Common.CommonConsumerProfile, Seq(Common.DistributionServiceName,
+          Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName)) ||
+        !addProfile(Common.SelfConsumerProfile, Seq(Common.DistributionServiceName,
+          Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName))) {
       log.error("Can't initialize distribution service")
       return false
     }
@@ -174,7 +176,6 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
       return false
     }
 
-
     log.info("")
     log.info(s"########################### Distribution service is ready")
     log.info("")
@@ -239,18 +240,10 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
     true
   }
 
-  def addCommonServicesProfile(): Boolean = {
-    log.info(s"--------------------------- Add common services profile")
+  def addProfile(profile: ServicesProfileId, services: Seq[ServiceId]): Boolean = {
+    log.info(s"--------------------------- Add profile ${profile}")
     adminDistributionClient.get.graphqlRequest(
-      administratorMutations.addServicesProfile(Common.CommonConsumerProfile, Seq(Common.DistributionServiceName,
-        Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName))).getOrElse(false)
-  }
-
-  def addOwnServicesProfile(): Boolean = {
-    log.info(s"--------------------------- Add own services profile")
-    adminDistributionClient.get.graphqlRequest(
-      administratorMutations.addServicesProfile(Common.SelfConsumerProfile, Seq(Common.DistributionServiceName,
-        Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName))).getOrElse(false)
+      administratorMutations.addServicesProfile(profile, services)).getOrElse(false)
   }
 
   def updateDistributionFromProvider(): Boolean = {

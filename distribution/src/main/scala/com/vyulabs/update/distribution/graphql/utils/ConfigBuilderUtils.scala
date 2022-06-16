@@ -35,7 +35,7 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
                                     (implicit log: Logger): Future[Boolean] = {
     log.info(if (!service.isEmpty) s"Set developer service ${service} config" else "Set common developer services config")
     val filters = Filters.eq("service", service)
-    collections.Developer_BuildServices.update(filters, oldConfig => {
+    collections.Developer_Services.update(filters, oldConfig => {
       for (oldConfig <- oldConfig) {
         val removedFiles = oldConfig.privateFiles.map(_.path).toSet -- privateFiles.map(_.path).toSet
         removedFiles.foreach(path => directory.getDeveloperPrivateFile(service, path).delete())
@@ -46,7 +46,7 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
   def removeBuildDeveloperServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
     log.info(if (!service.isEmpty) s"Remove developer service ${service} config" else "Remove common developer services config")
     val filters = Filters.eq("service", service)
-    collections.Developer_BuildServices.delete(filters).map(_ > 0)
+    collections.Developer_Services.delete(filters).map(_ > 0)
   }
 
   def getBuildDeveloperServicesConfig(service: Option[ServiceId])
@@ -56,7 +56,7 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
       args :+= Filters.ne("service", "")
     }
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Developer_BuildServices.find(filters)
+    collections.Developer_Services.find(filters)
   }
 
   def getBuildDeveloperServiceConfig(service: ServiceId)
@@ -85,7 +85,7 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
                                   (implicit log: Logger): Future[Boolean] = {
     log.info(if (!service.isEmpty) s"Set client service ${service} config" else "Set common client services config")
     val filters = Filters.eq("service", service)
-    collections.Client_BuildServices.update(filters, oldConfig => {
+    collections.Client_Services.update(filters, oldConfig => {
       for (oldConfig <- oldConfig) {
         val removedFiles = oldConfig.privateFiles.map(_.path).toSet -- privateFiles.map(_.path).toSet
         removedFiles.foreach(path => directory.getClientPrivateFile(service, path).delete())
@@ -97,7 +97,7 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
   def removeBuildClientServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
     log.info(if (!service.isEmpty) s"Remove client service ${service} config" else "Remove common client services config")
     val filters = Filters.eq("service", service)
-    collections.Client_BuildServices.delete(filters).map(_ > 0)
+    collections.Client_Services.delete(filters).map(_ > 0)
   }
 
   def getBuildClientServiceConfig(service: ServiceId)(implicit log: Logger): Future[Option[BuildServiceConfig]] = {
@@ -111,7 +111,7 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
       args :+= Filters.ne("service", "")
     }
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Client_BuildServices.find(filters)
+    collections.Client_Services.find(filters)
   }
 
   def getBuildClientServiceMergedConfig(service: ServiceId)

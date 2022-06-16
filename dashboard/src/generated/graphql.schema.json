@@ -5881,7 +5881,7 @@
                 "deprecationReason": null
               },
               {
-                "name": "buildTargets",
+                "name": "targets",
                 "description": null,
                 "type": {
                   "kind": "LIST",
@@ -5938,7 +5938,7 @@
                 "deprecationReason": null
               },
               {
-                "name": "buildTargets",
+                "name": "targets",
                 "description": null,
                 "type": {
                   "kind": "LIST",

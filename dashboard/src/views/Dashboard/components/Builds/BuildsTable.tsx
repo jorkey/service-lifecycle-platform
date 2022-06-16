@@ -2,7 +2,7 @@ import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
-import {TasksQuery} from "../../../../generated/graphql";
+import {TasksQuery, TimedBuildServiceState} from "../../../../generated/graphql";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles((theme:any) => ({
@@ -27,6 +27,8 @@ const useStyles = makeStyles((theme:any) => ({
   },
   commentColumn: {
   },
+  statusColumn: {
+  },
   startTimeColumn: {
     width: '250px',
   },
@@ -38,12 +40,12 @@ const useStyles = makeStyles((theme:any) => ({
   },
 }));
 
-interface DeveloperVersionsInProcessTableProps {
-  developerVersionsInProcess: TasksQuery | undefined
+interface BuildsTableProps {
+  buildStates: TimedBuildServiceState[] | undefined
 }
 
-const DeveloperVersionsInProcessTable: React.FC<DeveloperVersionsInProcessTableProps> = (props) => {
-  const { developerVersionsInProcess } = props
+const BuildsTable: React.FC<BuildsTableProps> = (props) => {
+  const { buildStates } = props
 
   const classes = useStyles()
 
@@ -55,7 +57,7 @@ const DeveloperVersionsInProcessTable: React.FC<DeveloperVersionsInProcessTableP
     },
     {
       name: 'version',
-      headerName: 'Version In Process',
+      headerName: 'Version',
       className: classes.versionColumn,
     },
     {
@@ -64,25 +66,31 @@ const DeveloperVersionsInProcessTable: React.FC<DeveloperVersionsInProcessTableP
       className: classes.authorColumn,
     },
     {
-      name: 'startTime',
+      name: 'time',
       type: 'relativeTime',
-      headerName: 'Start Time',
+      headerName: 'Time',
       className: classes.startTimeColumn,
     },
     {
       name: 'comment',
       headerName: 'Comment',
       className: classes.commentColumn,
+    },
+    {
+      name: 'status',
+      headerName: 'Status',
+      className: classes.statusColumn,
     }
   ]
 
-  const rows = developerVersionsInProcess?.tasks.map(task => (
+  const rows = buildStates?.map(state => (
     new Map<string, GridTableCellParams>([
-      ['service', { value: task.parameters.find(p => p.name == 'service')?.value }],
-      ['version', { value: task.parameters.find(p => p.name == 'version')?.value }],
-      ['author', { value: task.parameters.find(p => p.name == 'author')?.value }],
-      ['comment', { value: task.parameters.find(p => p.name == 'comment')?.value }],
-      ['startTime', { value: task.creationTime }]
+      ['service', { value: state.service }],
+      ['version', { value: state.version }],
+      ['author', { value: state.author }],
+      ['time', { value: state.time }],
+      ['comment', { value: state.comment }],
+      ['status', { value: state.status.toString() }],
     ])))
 
   return rows?.length?<GridTable className={classes.versionsTable}
@@ -90,4 +98,4 @@ const DeveloperVersionsInProcessTable: React.FC<DeveloperVersionsInProcessTableP
            rows={rows?rows:[]}/>:null
 }
 
-export default DeveloperVersionsInProcessTable
+export default BuildsTable

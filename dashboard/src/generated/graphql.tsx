@@ -736,13 +736,13 @@ export type QueryInstalledDesiredVersionsArgs = {
 
 export type QueryBuildStatesArgs = {
   service?: Maybe<Scalars['String']>;
-  buildTargets?: Maybe<Array<BuildTarget>>;
+  targets?: Maybe<Array<BuildTarget>>;
 };
 
 
 export type QueryBuildStatesHistoryArgs = {
   service?: Maybe<Scalars['String']>;
-  buildTargets?: Maybe<Array<BuildTarget>>;
+  targets?: Maybe<Array<BuildTarget>>;
   limit: Scalars['Int'];
 };
 
@@ -3169,7 +3169,7 @@ export type SetClientDesiredVersionsMutationResult = Apollo.MutationResult<SetCl
 export type SetClientDesiredVersionsMutationOptions = Apollo.BaseMutationOptions<SetClientDesiredVersionsMutation, SetClientDesiredVersionsMutationVariables>;
 export const BuildStatesDocument = gql`
     query buildStates($service: String, $targets: [BuildTarget!]) {
-  buildStates(service: $service, buildTargets: $targets) {
+  buildStates(service: $service, targets: $targets) {
     time
     service
     targets
@@ -3212,7 +3212,7 @@ export type BuildStatesLazyQueryHookResult = ReturnType<typeof useBuildStatesLaz
 export type BuildStatesQueryResult = Apollo.QueryResult<BuildStatesQuery, BuildStatesQueryVariables>;
 export const BuildStatesHistoryDocument = gql`
     query buildStatesHistory($service: String, $targets: [BuildTarget!], $limit: Int!) {
-  buildStatesHistory(service: $service, buildTargets: $targets, limit: $limit) {
+  buildStatesHistory(service: $service, targets: $targets, limit: $limit) {
     time
     service
     targets

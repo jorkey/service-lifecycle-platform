@@ -1,16 +1,13 @@
 import React, {useCallback, useState} from 'react';
-import { makeStyles } from '@material-ui/styles';
-import {
-  Button,
-  Card,
-  CardContent, CardHeader,
-} from '@material-ui/core';
+import {makeStyles} from '@material-ui/styles';
+import {Button, Card, CardContent, CardHeader,} from '@material-ui/core';
 import {
   BuildStatus,
-  useBuildDeveloperServicesQuery, useClientBuildsQuery, useDeveloperBuildsQuery,
+  BuildTarget,
+  useBuildDeveloperServicesQuery,
+  useBuildStatesQuery,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
-import {Version} from "../../../../common";
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
@@ -66,22 +63,18 @@ const BuildDeveloper = () => {
     onError(err) { setError('Query developer services error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-  const { data: developerBuilds, refetch: getDeveloperBuilds } = useDeveloperBuildsQuery({
+  const { data: buildStates, refetch: getBuildStates } = useBuildStatesQuery({
+    variables: { targets: [ BuildTarget.DeveloperVersion ] },
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    onError(err) { setError('Query developer builds error ' + err.message) },
-    onCompleted() { setError(undefined) }
-  })
-  const { data: clientBuilds, refetch: getClientDeveloperBuilds } = useClientBuildsQuery({
-    fetchPolicy: 'no-cache', // base option no-cache does not work
-    onError(err) { setError('Query client builds error ' + err.message) },
+    onError(err) { setError('Query build states error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const handleOnClick = useCallback((service: string) => {
-    const task = developerBuilds?.developerBuilds.find(build => build.service == service)?.task
+    const task = buildStates?.buildStates.find(build => build.service == service)?.task
     return task ? history.push('developer/monitor/' + task) :
       history.push('developer/start/' + service)
-  }, [ developerBuilds, history ]);
+  }, [ buildStates, history ]);
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -111,13 +104,8 @@ const BuildDeveloper = () => {
       className: classes.commentColumn,
     },
     {
-      name: 'developerStatus',
-      headerName: 'Developer Status',
-      className: classes.statusColumn,
-    },
-    {
-      name: 'clientStatus',
-      headerName: 'Client Status',
+      name: 'status',
+      headerName: 'Status',
       className: classes.statusColumn,
     },
     {
@@ -130,18 +118,16 @@ const BuildDeveloper = () => {
 
   const rows = services?.buildDeveloperServicesConfig.map(s => s.service).sort().map(
     service => {
-      const developerState = developerBuilds?.developerBuilds.find(build => build.service == service)
-      const clientState = clientBuilds?.clientBuilds.find(build => build.service == service)
+      const buildState = buildStates?.buildStates.find(build => build.service == service)
       return new Map<string, GridTableCellParams>([
-          ['service', { value: developerState?developerState.service:'' }],
-          ['version', { value: developerState?Version.buildToString(developerState.version.build):'' }],
-          ['author', { value: developerState?developerState.author:'' }],
-          ['time', { value: developerState?developerState.time:'' }],
-          ['comment', { value: developerState?developerState.comment:'' }],
-          ['developerStatus', { value: developerState?developerState.status.toString():'' }],
-          ['clientStatus', { value: clientState?clientState.status.toString():'' }],
+          ['service', { value: buildState?buildState.service:'' }],
+          ['version', { value: buildState?buildState.version:'' }],
+          ['author', { value: buildState?buildState.author:'' }],
+          ['time', { value: buildState?buildState.time:'' }],
+          ['comment', { value: buildState?buildState.comment:'' }],
+          ['status', { value: buildState?buildState.status.toString():'' }],
           ['actions', { value: [<Button key='0' title='Start Build' onClick={ () => handleOnClick(service) }>
-            {developerState?.status == BuildStatus.InProcess?<VisibilityIcon/>:<BuildIcon/>}
+            {buildState?.status == BuildStatus.InProcess?<VisibilityIcon/>:<BuildIcon/>}
           </Button>] }]
         ])
     })
@@ -153,7 +139,7 @@ const BuildDeveloper = () => {
           <FormGroup row>
             <RefreshControl
               className={classes.control}
-              refresh={ () => { getServices(); getDeveloperBuilds() }}
+              refresh={ () => { getServices(); getBuildStates() }}
             />
           </FormGroup>
         }

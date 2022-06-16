@@ -96,6 +96,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   const { data: providers } = useProvidersInfoQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
+    onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query providers info error ' + err.message) }
   })
   const { data: clientDesiredVersions, refetch: getClientDesiredVersions } = useClientDesiredVersionsQuery({
@@ -111,6 +112,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   const [ getSelfServicesProfile, selfServicesProfile ] = useProfileServicesLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { profile: 'self' },
+    onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query self profile services error ' + err.message) },
   })
   const [ getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery({
@@ -195,7 +197,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   const makeRowsData: () => RowData[] = () => {
     if (clientDesiredVersions && clientVersions &&
-        (!provider || (providerDesiredVersions.data && testedVersions.data?.testedVersions))) {
+        ((!provider && selfServicesProfile.data) || (providerDesiredVersions.data && testedVersions.data?.testedVersions))) {
       const services = makeServicesList()
       return services.sort().map(
         service => {

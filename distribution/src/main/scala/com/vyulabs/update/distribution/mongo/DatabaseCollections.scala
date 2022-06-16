@@ -81,7 +81,7 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
       collection
     }, createIndices = createIndices)
 
-  val Developer_BuildServices = new SequencedCollection[BuildServiceConfig]("developer.buildServices", for {
+  val Developer_Services = new SequencedCollection[BuildServiceConfig]("developer.services", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.services")
   } yield {
     if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
@@ -118,7 +118,7 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
     collection
   }, createIndices = createIndices)
 
-  val Client_BuildServices = new SequencedCollection[BuildServiceConfig]("client.buildServices", for {
+  val Client_Services = new SequencedCollection[BuildServiceConfig]("client.services", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.services")
   } yield {
     if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
@@ -153,8 +153,8 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
     collection
   }, createIndices = createIndices)
 
-  val State_Build = new SequencedCollection[ServerBuildServiceState]("state.build", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("state.build")
+  val State_Builds = new SequencedCollection[ServerBuildServiceState]("state.builds", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("state.builds")
   } yield {
     if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
