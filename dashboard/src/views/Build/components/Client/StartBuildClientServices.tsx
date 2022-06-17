@@ -32,7 +32,7 @@ import {RefreshControl} from "../../../../common/components/refreshControl/Refre
 import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Button from "@material-ui/core/Button";
-import {RouteComponentProps, useHistory} from "react-router-dom";
+import {RouteComponentProps, useHistory, useRouteMatch} from "react-router-dom";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles((theme:any) => ({
@@ -84,7 +84,6 @@ interface BuildRouteParams {
 }
 
 interface BuildServiceParams extends RouteComponentProps<BuildRouteParams> {
-  fromUrl: string
 }
 
 const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
@@ -93,6 +92,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   const [provider, setProvider] = useState<DistributionProviderInfo>()
   const [error, setError] = useState<string>()
   const [rows, setRows] = useState<RowData[]>([])
+
+  const routeMatch = useRouteMatch()
 
   const { data: providers } = useProvidersInfoQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
@@ -149,7 +150,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       setError('Build version error ' + err.message)
     },
     onCompleted(data) {
-      history.push(props.fromUrl + '/monitor/' + data.buildClientVersions)
+      history.push(
+        `${routeMatch.url.substring(0, routeMatch.url.indexOf("/start"))}/monitor/${data.buildClientVersions}`)
     }
   })
   const [ setTestedVersions ] = useSetTestedVersionsMutation({

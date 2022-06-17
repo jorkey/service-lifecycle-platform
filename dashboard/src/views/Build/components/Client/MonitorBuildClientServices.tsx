@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
-import {NavLink as RouterLink, RouteComponentProps} from "react-router-dom"
+import {NavLink as RouterLink, RouteComponentProps, useHistory} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import {
@@ -40,7 +40,6 @@ interface MonitorBuildServicesRouteParams {
 }
 
 interface MonitorBuildServicesParams extends RouteComponentProps<MonitorBuildServicesRouteParams> {
-  fromUrl: string
 }
 
 const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
@@ -57,6 +56,8 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
   const [terminatedStatus, setTerminatedStatus] = useState<boolean>()
 
   const [error, setError] = useState<string>()
+
+  const history = useHistory()
 
   enum Status { InProcess, Success, Error}
   const [status, setStatus] = useState<Status>()
@@ -179,9 +180,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
               <Button className={classes.control}
                       color="primary"
                       variant="contained"
-                      component={RouterLink}
-                      to={ props.fromUrl }
-              >
+                      onClick={() => history.goBack()}>
                 Exit
               </Button>
             </Box>

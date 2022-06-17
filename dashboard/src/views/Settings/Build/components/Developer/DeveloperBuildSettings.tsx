@@ -14,7 +14,6 @@ interface DeveloperServiceRouteParams {
 
 interface DeveloperServiceEditorParams extends RouteComponentProps<DeveloperServiceRouteParams> {
   new?: boolean
-  fromUrl: string
 }
 
 const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => {
@@ -70,7 +69,6 @@ const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => 
                     privateFiles, macroValues } })
                   .then((r) => !!r.data?.setBuildDeveloperServiceConfig) }
               error={error}
-              fromUrl={props.fromUrl}
       />)
   } else {
     return null

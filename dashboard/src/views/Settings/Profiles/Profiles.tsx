@@ -14,10 +14,10 @@ const Profiles = () => {
       <Route exact path={routeMatch.url}
              component={ProfilesManager}/>
       <Route exact path={`${routeMatch.url}/new`}
-             render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}`} {...props} /> }>
+             render={(props) => <ProfileEditor {...props} /> }>
       </Route>
       <Route exact path={`${routeMatch.url}/edit/:profile`}
-             render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}`} {...props} /> }>
+             render={(props) => <ProfileEditor {...props} /> }>
       </Route>
     </Switch>
   );

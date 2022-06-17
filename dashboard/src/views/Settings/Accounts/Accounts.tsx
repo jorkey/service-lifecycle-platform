@@ -16,13 +16,13 @@ const Accounts = () => {
       <Route exact path={`${routeMatch.url}/:type`}
         component={AccountManager}/>
       <Route exact path={[`${routeMatch.url}/users/new`, `${routeMatch.url}/users/edit/:account`]}
-        render={(props) => <UserEditor fromUrl={routeMatch.url + '/users'} {...props} /> }>
+        render={(props) => <UserEditor {...props} /> }>
       </Route>
       <Route exact path={[`${routeMatch.url}/services/new`, `${routeMatch.url}/services/edit/:account`]}
-             render={(props) => <ServiceEditor fromUrl={routeMatch.url + '/services'} {...props} /> }>
+             render={(props) => <ServiceEditor {...props} /> }>
       </Route>
       <Route exact path={[`${routeMatch.url}/consumers/new`, `${routeMatch.url}/consumers/edit/:account`]}
-             render={(props) => <ConsumerEditor fromUrl={routeMatch.url + '/consumers'} {...props} /> }>
+             render={(props) => <ConsumerEditor {...props} /> }>
       </Route>
     </Switch>
   );

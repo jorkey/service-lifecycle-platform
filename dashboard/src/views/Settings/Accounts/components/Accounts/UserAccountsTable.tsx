@@ -5,12 +5,12 @@ import {
   useUserAccountsInfoQuery
 } from '../../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
-import {Redirect, useRouteMatch} from "react-router-dom";
+import {Redirect, Route, useHistory, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../../common/components/dialogs/ConfirmDialog";
 import GridTable from "../../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams} from "../../../../../common/components/gridTable/GridTableColumn";
-import {Button} from "@material-ui/core";
+import {Button, Link} from "@material-ui/core";
 import {GridTableCellParams} from "../../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles(theme => ({
@@ -41,7 +41,6 @@ interface UserAccountsTableProps {
 }
 
 const UserAccountsTable: React.FC<UserAccountsTableProps> = props => {
-  const [ startEdit, setStartEdit ] = React.useState('')
   const [ deleteConfirm, setDeleteConfirm ] = useState('')
 
   const classes = useStyles()
@@ -59,11 +58,8 @@ const UserAccountsTable: React.FC<UserAccountsTableProps> = props => {
     onCompleted() { setError(undefined) }
   })
 
-  const routeMatch = useRouteMatch();
-
-  if (startEdit) {
-    return <Redirect to={`${routeMatch.url}/edit/${startEdit}`}/>
-  }
+  const routeMatch = useRouteMatch()
+  const history = useHistory()
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -118,7 +114,7 @@ const UserAccountsTable: React.FC<UserAccountsTableProps> = props => {
       columns={columns}
       rows={rows}
       onClicked={ (row) =>
-        setStartEdit(rows[row].get('account')!.value! as string) }
+        history.push(`${routeMatch.url}/edit/${rows[row].get('account')!.value! as string}`) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

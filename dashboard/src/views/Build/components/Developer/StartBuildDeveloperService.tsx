@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import {NavLink as RouterLink, RouteComponentProps, useHistory} from "react-router-dom"
+import {NavLink as RouterLink, RouteComponentProps, useHistory, useRouteMatch} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import {
@@ -50,7 +50,6 @@ interface BuildRouteParams {
 }
 
 interface BuildServiceParams extends RouteComponentProps<BuildRouteParams> {
-  fromUrl: string
 }
 
 const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
@@ -70,6 +69,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const [error, setError] = useState<string>()
 
   const history = useHistory()
+  const routeMatch = useRouteMatch()
 
   const [ getWhoAmI, whoAmI ] = useWhoAmILazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
@@ -94,7 +94,8 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
     variables: { service: service, version: { build: Version.parseBuild(version) },
       comment: comment, buildClientVersion: buildClientVersion },
     onCompleted(data) {
-      history.push(props.fromUrl + '/monitor/' + data.buildDeveloperVersion)
+      history.push(
+        `${routeMatch.url.substring(0, routeMatch.url.indexOf("/start"))}/monitor/${data.buildDeveloperVersion}`)
     },
     onError(err) { setError('Build version error ' + err.message) }
   })
@@ -220,8 +221,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
           <Button className={classes.control}
             color="primary"
             variant="contained"
-            component={RouterLink}
-            to={ props.fromUrl }
+            onClick={() => history.goBack()}
           >
             Cancel
           </Button>

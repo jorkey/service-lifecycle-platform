@@ -1,9 +1,10 @@
-import React from 'react';
+import React, {useCallback} from 'react';
 import { makeStyles } from '@material-ui/styles';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {TasksQuery, TimedBuildServiceState} from "../../../../generated/graphql";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
+import {useHistory, useRouteMatch} from "react-router-dom";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -27,7 +28,12 @@ const useStyles = makeStyles((theme:any) => ({
   },
   commentColumn: {
   },
+  taskColumn: {
+    width: '40px',
+  },
   statusColumn: {
+    width: '40px',
+    paddingRight: '10px'
   },
   startTimeColumn: {
     width: '250px',
@@ -48,6 +54,13 @@ const BuildsTable: React.FC<BuildsTableProps> = (props) => {
   const { buildStates } = props
 
   const classes = useStyles()
+
+  const history = useHistory()
+  const routeMatch = useRouteMatch()
+
+  const handleOnClick = useCallback((task: string) => {
+    history.push('/logging/tasks/' + task)
+  }, [ history ]);
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -77,6 +90,11 @@ const BuildsTable: React.FC<BuildsTableProps> = (props) => {
       className: classes.commentColumn,
     },
     {
+      name: 'task',
+      headerName: 'Task',
+      className: classes.taskColumn,
+    },
+    {
       name: 'status',
       headerName: 'Status',
       className: classes.statusColumn,
@@ -90,12 +108,14 @@ const BuildsTable: React.FC<BuildsTableProps> = (props) => {
       ['author', { value: state.author }],
       ['time', { value: state.time }],
       ['comment', { value: state.comment }],
+      ['task', { value: state.task }],
       ['status', { value: state.status.toString() }],
     ])))
 
   return rows?.length?<GridTable className={classes.versionsTable}
            columns={columns}
-           rows={rows?rows:[]}/>:null
+           rows={rows?rows:[]}
+           onClicked={row => handleOnClick(buildStates![row]?.task)}
+  />:null
 }
-
 export default BuildsTable

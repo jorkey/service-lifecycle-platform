@@ -18,7 +18,6 @@ interface FaultsRouteParams {
 }
 
 interface FaultsParams extends RouteComponentProps<FaultsRouteParams> {
-  fromUrl: string
 }
 
 const FaultsView: React.FC<FaultsParams> = props => {

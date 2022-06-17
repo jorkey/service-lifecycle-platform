@@ -15,29 +15,29 @@ const Build = () => {
              component={DeveloperBuildConfiguration}/>
       <Route exact path={`${routeMatch.url}/developer/new`}
              render={(props) =>
-               <DeveloperBuildSettings new={true} fromUrl={`${routeMatch.url}/developer`} {...props} />}>
+               <DeveloperBuildSettings new={true} {...props} />}>
       </Route>
       <Route exact path={`${routeMatch.url}/developer/edit`}
              render={(props) =>
-               <DeveloperBuildSettings fromUrl={`${routeMatch.url}/developer`} {...props} />}>
+               <DeveloperBuildSettings {...props} />}>
       </Route>
       <Route exact path={`${routeMatch.url}/developer/edit/:service`}
              render={(props) =>
-               <DeveloperBuildSettings fromUrl={`${routeMatch.url}/developer`} {...props} />}>
+               <DeveloperBuildSettings {...props} />}>
       </Route>
       <Route exact path={`${routeMatch.url}/client`}
              component={ClientBuildConfiguration}/>
       <Route exact path={`${routeMatch.url}/client/new`}
              render={(props) =>
-               <ClientBuildSettings new={true} fromUrl={`${routeMatch.url}/client`} {...props} />}>
+               <ClientBuildSettings new={true} {...props} />}>
       </Route>
       <Route exact path={`${routeMatch.url}/client/edit`}
              render={(props) =>
-               <ClientBuildSettings fromUrl={`${routeMatch.url}/client`} {...props} />}>
+               <ClientBuildSettings {...props} />}>
       </Route>
       <Route exact path={`${routeMatch.url}/client/edit/:service`}
              render={(props) =>
-               <ClientBuildSettings fromUrl={`${routeMatch.url}/client`} {...props} />}>
+               <ClientBuildSettings {...props} />}>
       </Route>
     </Switch>
   );

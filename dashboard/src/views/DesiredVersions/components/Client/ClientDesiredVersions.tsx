@@ -22,7 +22,6 @@ interface ClientDesiredVersionsRouteParams {
 }
 
 interface ClientDesiredVersionsParams extends RouteComponentProps<ClientDesiredVersionsRouteParams> {
-  fromUrl: string
 }
 
 const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {

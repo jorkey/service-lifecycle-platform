@@ -45,7 +45,6 @@ interface ProfileRouteParams {
 }
 
 interface ProfileEditorParams extends RouteComponentProps<ProfileRouteParams> {
-  fromUrl: string
 }
 
 const ProfileEditor: React.FC<ProfileEditorParams> = props => {
@@ -77,6 +76,8 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
 
   const [initialized, setInitialized] = useState(false);
   const [addService, setAddService] = useState(false);
+
+  const history = useHistory()
 
   const editProfile = props.match.params.profile
 
@@ -117,7 +118,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
     })
 
   if (addProfileData || changeProfileData) {
-    return <Redirect to={props.fromUrl} />
+    history.goBack()
   }
 
   const validate: () => boolean = () => {
@@ -211,9 +212,8 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
           <Button
             className={classes.control}
             color="primary"
-            component={RouterLink}
-            to={props.fromUrl}
             variant="contained"
+            onClick={() => history.goBack()}
           >
             Cancel
           </Button>

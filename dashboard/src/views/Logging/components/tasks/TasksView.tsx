@@ -7,7 +7,7 @@ import {
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
-import {RouteComponentProps, useHistory} from "react-router-dom";
+import {RouteComponentProps, useHistory, useRouteMatch} from "react-router-dom";
 import {
   useTaskServicesQuery,
   useTaskTypesQuery
@@ -51,7 +51,6 @@ interface TasksRouteParams {
 }
 
 interface TasksParams extends RouteComponentProps<TasksRouteParams> {
-  fromUrl: string
 }
 
 const TasksView: React.FC<TasksParams> = props => {
@@ -64,6 +63,8 @@ const TasksView: React.FC<TasksParams> = props => {
   const [toTime, setToTime] = useState<Date>()
 
   const history = useHistory()
+  const routeMatch = useRouteMatch()
+
   const [error, setError] = useState<string>()
 
   const { data: taskTypes } = useTaskTypesQuery({
@@ -77,7 +78,7 @@ const TasksView: React.FC<TasksParams> = props => {
   })
 
   const handleOnClick = useCallback((task: string) => {
-    history.push('tasks/' + task)
+    history.push(`${routeMatch.url}/${task}`)
   }, [ history ]);
 
   return (

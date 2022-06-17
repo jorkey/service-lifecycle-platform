@@ -8,7 +8,7 @@ import {
   Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import {Redirect, useRouteMatch} from "react-router-dom";
+import {Redirect, useHistory, useRouteMatch} from "react-router-dom";
 import { NavLink as RouterLink } from 'react-router-dom';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
@@ -60,16 +60,12 @@ interface ServicesManagerParams {
 const BuildConfiguration: React.FC<ServicesManagerParams> = props => {
   const { title, services, removeServiceConfig, error } = props
 
-  const [ startEdit, setStartEdit ] = React.useState('')
   const [ deleteConfirm, setDeleteConfirm ] = useState('')
 
   const classes = useStyles()
 
   const routeMatch = useRouteMatch()
-
-  if (startEdit) {
-    return <Redirect to={`${routeMatch.url}/edit/${startEdit}`}/>
-  }
+  const history = useHistory()
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -135,7 +131,7 @@ const BuildConfiguration: React.FC<ServicesManagerParams> = props => {
           columns={columns}
           rows={rows}
           onClicked={(row) =>
-            setStartEdit(rows[row].get('service')?.value! as string)
+            history.push(`${routeMatch.url}/edit/${rows[row].get('service')?.value! as string}`)
           }
         />
         {error && <Alert className={classes.alert} severity="error">{error}</Alert>}

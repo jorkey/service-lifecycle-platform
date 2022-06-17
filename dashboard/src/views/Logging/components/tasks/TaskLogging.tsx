@@ -9,14 +9,12 @@ import {
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
-import {NavLink as RouterLink, RouteComponentProps} from "react-router-dom";
+import {NavLink as RouterLink, RouteComponentProps, useHistory} from "react-router-dom";
 import {
   useLogLevelsQuery,
-  useTasksQuery
 } from "../../../../generated/graphql";
 import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
 import {Logs} from "../../../../common/utils/Logs";
-import {upload} from "../../../../common/load/Upload";
 
 const useStyles = makeStyles((theme:any) => ({
   content: {
@@ -71,7 +69,6 @@ interface TaskLoggingRouteParams {
 }
 
 interface TaskLoggingParams extends RouteComponentProps<TaskLoggingRouteParams> {
-  fromUrl: string
 }
 
 const TaskLogging: React.FC<TaskLoggingParams> = props => {
@@ -83,6 +80,8 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
   const [follow, setFollow] = useState<boolean>()
 
   const [error, setError] = useState<string>()
+
+  const history = useHistory()
 
   const tableRef = useRef<LogsTableEvents>(null)
 
@@ -187,9 +186,8 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
       <Button
         className={classes.control}
         color="primary"
-        component={RouterLink}
-        to={props.fromUrl}
         variant="contained"
+        onClick={() => history.goBack()}
       >
         Exit
       </Button>

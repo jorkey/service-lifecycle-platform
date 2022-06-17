@@ -84,7 +84,6 @@ interface LoggingRouteParams {
 }
 
 interface LoggingParams extends RouteComponentProps<LoggingRouteParams> {
-  fromUrl?: string
 }
 
 const ServiceLogging: React.FC<LoggingParams> = props => {

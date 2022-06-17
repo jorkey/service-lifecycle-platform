@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 
-import {Redirect, RouteComponentProps, useHistory} from "react-router-dom"
+import {Redirect, RouteComponentProps, useHistory, useRouteMatch} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import Alert from "@material-ui/lab/Alert";
@@ -16,13 +16,13 @@ interface BuildClientRouteParams {
 }
 
 interface BuildClientParams extends RouteComponentProps<BuildClientRouteParams> {
-  fromUrl: string
 }
 
 const BuildClient = (props: BuildClientParams) => {
   const classes = useStyles()
 
   const history = useHistory()
+  const routeMatch = useRouteMatch()
   const [error, setError] = useState<string>()
 
   useTasksQuery({
@@ -30,8 +30,8 @@ const BuildClient = (props: BuildClientParams) => {
     variables: { type: 'BuildClientVersions', onlyActive: true },
     onCompleted(tasks) {
       tasks.tasks.length?
-        history.push('client/monitor/' + tasks.tasks[0].task):
-        history.push('client/start')
+        history.push(`${routeMatch.url}/monitor/` + tasks.tasks[0].task):
+        history.push(`${routeMatch.url}/start`)
     },
     onError(err) { setError('Query client versions in process error ' + err.message) },
   })

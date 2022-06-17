@@ -22,7 +22,7 @@ const Logging = () => {
           <Route exact path={`${routeMatch.url}/tasks`}
                  component={TasksView}/>
           <Route exact path={`${routeMatch.url}/tasks/:task`}
-                 render={(props) => <TaskLogging fromUrl={routeMatch.url + '/tasks'} {...props} /> }/>
+                 render={(props) => <TaskLogging {...props} /> }/>
           <Route exact path={`${routeMatch.url}/services`}
                  component={ServiceLogging}/>
         </Switch>

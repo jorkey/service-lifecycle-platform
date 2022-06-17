@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 
 import Button from '@material-ui/core/Button';
-import {NavLink as RouterLink, Redirect} from 'react-router-dom'
+import {NavLink as RouterLink, Redirect, useHistory} from 'react-router-dom'
 
 import { makeStyles } from '@material-ui/core/styles';
 import {
@@ -71,13 +71,12 @@ interface ServiceEditorParams {
   setServiceConfig: (service: string, distribution: string | null | undefined, environment: NamedStringValue[],
                      repositories: Repository[], privateFiles: FileInfo[], macroValues: NamedStringValue[]) => Promise<boolean>
   error?: string
-  fromUrl: string
 }
 
 const BuildSettings: React.FC<ServiceEditorParams> = props => {
   const { service: initService, services, distribution: initBuilderDistribution, environment: initEnvironment,
     repositoriesTitle, repositories: initRepositories, privateFiles: initPrivateFiles, uploadPrivateFilePath,
-    macroValues: initMacroValues, hasService, validate, setServiceConfig, error, fromUrl } = props
+    macroValues: initMacroValues, hasService, validate, setServiceConfig, error } = props
 
   const [service, setService] = useState(initService)
   const [builderDistribution, setBuilderDistribution] = useState(initBuilderDistribution)
@@ -104,6 +103,8 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
     onError(err) { setOwnError('Query providers info error ' + err.message) },
   })
 
+  const history = useHistory()
+
   useEffect(() => { if (addEnvironment) { setAddRepository(false); setAddMacroValue(false) }},
     [ addEnvironment ])
   useEffect(() => { if (addRepository) { setAddEnvironment(false); setAddMacroValue(false) }},
@@ -112,7 +113,7 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
     [ addMacroValue ])
 
   if (goBack) {
-    return <Redirect to={fromUrl}/>
+    history.goBack()
   }
 
   if (providers) {
@@ -364,9 +365,7 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
           <Button
             className={classes.control}
             color="primary"
-            component={RouterLink}
-            to={props.fromUrl}
-            variant="contained"
+            onClick={() => history.goBack()}
           >
             Cancel
           </Button>

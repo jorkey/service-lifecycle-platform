@@ -55,7 +55,6 @@ interface AccountRouteParams {
 }
 
 interface AccountEditorParams extends RouteComponentProps<AccountRouteParams> {
-  fromUrl: string
 }
 
 const ConsumerEditor: React.FC<AccountEditorParams> = props => {
@@ -80,6 +79,8 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
   const [profile, setProfile] = useState<string>();
 
   const [initialized, setInitialized] = useState(false);
+
+  const history = useHistory()
 
   const editAccount = props.match.params.account
 
@@ -114,7 +115,7 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
     })
 
   if (addAccountData || changeAccountData) {
-    return <Redirect to={props.fromUrl}/>
+    history.goBack()
   }
 
   const validate: () => boolean = () => {
@@ -218,8 +219,7 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
           <Button className={classes.control}
             color="primary"
             variant="contained"
-            component={RouterLink}
-            to={props.fromUrl}
+            onClick={() => history.goBack()}
           >
             Cancel
           </Button>

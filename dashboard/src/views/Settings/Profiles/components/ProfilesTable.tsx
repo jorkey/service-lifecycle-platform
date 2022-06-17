@@ -5,7 +5,7 @@ import {
   useServiceProfilesQuery,
 } from '../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
-import {Redirect, useRouteMatch} from 'react-router-dom';
+import {Redirect, useHistory, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/components/dialogs/ConfirmDialog';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
@@ -29,7 +29,6 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const ProfilesTable = () => {
-  const [ startEdit, setStartEdit ] = React.useState('')
   const [ deleteConfirm, setDeleteConfirm ] = useState('')
 
   const [error, setError] = useState<string>()
@@ -48,10 +47,7 @@ const ProfilesTable = () => {
   const classes = useStyles()
 
   const routeMatch = useRouteMatch();
-
-  if (startEdit) {
-    return <Redirect to={`${routeMatch.url}/edit/${startEdit}`}/>
-  }
+  const history = useHistory();
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -86,7 +82,7 @@ const ProfilesTable = () => {
       columns={columns}
       rows={rows}
       onClicked={ (row) =>
-        setStartEdit(rows[row].get('profile')?.value! as string) }
+        history.push(`${routeMatch.url}/edit/${rows[row].get('profile')?.value! as string}`) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

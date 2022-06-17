@@ -16,7 +16,6 @@ interface ClientServiceRouteParams {
 
 interface ClientServiceEditorParams extends RouteComponentProps<ClientServiceRouteParams> {
   new?: boolean
-  fromUrl: string
 }
 
 const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
@@ -112,7 +111,6 @@ const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
                   .then((r) => !!r.data?.setBuildClientServiceConfig)
               }
               error={error}
-              fromUrl={props.fromUrl}
       />)
   } else {
     return null

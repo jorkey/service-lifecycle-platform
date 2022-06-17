@@ -11,7 +11,7 @@ import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
-import {useHistory} from "react-router-dom";
+import {useHistory, useRouteMatch} from "react-router-dom";
 import BuildIcon from "@material-ui/icons/Build";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
@@ -58,6 +58,8 @@ const BuildDeveloper = () => {
   const history = useHistory()
   const [error, setError] = useState<string>()
 
+  const routeMatch = useRouteMatch()
+
   const { data: services, refetch: getServices } = useBuildDeveloperServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query developer services error ' + err.message) },
@@ -71,9 +73,11 @@ const BuildDeveloper = () => {
   })
 
   const handleOnClick = useCallback((service: string) => {
-    const task = buildStates?.buildStates.find(build => build.service == service)?.task
-    return task ? history.push('developer/monitor/' + task) :
-      history.push('developer/start/' + service)
+    const task = buildStates?.buildStates
+      .find(build => build.service == service && build.status == BuildStatus.InProcess)?.task
+    return task ?
+      history.push(`${routeMatch.url}/monitor/${task}`) :
+      history.push(`${routeMatch.url}/start/${service}`)
   }, [ buildStates, history ]);
 
   const columns: Array<GridTableColumnParams> = [

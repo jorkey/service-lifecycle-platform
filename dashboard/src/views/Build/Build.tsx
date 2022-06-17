@@ -17,19 +17,19 @@ const Build = () => {
       <Route exact path={`${routeMatch.url}/developer`}
              component={BuildDeveloper}/>
       <Route exact path={`${routeMatch.url}/developer/start/:service`}
-             render={(props) => <StartBuildDeveloperService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
+             render={(props) => <StartBuildDeveloperService {...props} /> }>
       </Route>
       <Route exact path={`${routeMatch.url}/developer/monitor/:task`}
-             render={(props) => <MonitorBuildDeveloperService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
+             render={(props) => <MonitorBuildDeveloperService {...props} /> }>
       </Route>
 
       <Route exact path={`${routeMatch.url}/client`}
              component={BuildClient}/>
       <Route exact path={`${routeMatch.url}/client/start`}
-             render={(props) => <StartBuildClientServices fromUrl={routeMatch.url + '/client'} {...props} /> }>
+             render={(props) => <StartBuildClientServices {...props} /> }>
       </Route>
       <Route exact path={`${routeMatch.url}/client/monitor/:task`}
-             render={(props) => <MonitorBuildClientServices fromUrl={routeMatch.url + '/client'} {...props} /> }>
+             render={(props) => <MonitorBuildClientServices {...props} /> }>
       </Route>
     </Switch>
   );
