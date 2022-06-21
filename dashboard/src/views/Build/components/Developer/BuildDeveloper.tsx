@@ -34,6 +34,8 @@ const useStyles = makeStyles((theme:any) => ({
   },
   commentColumn: {
   },
+  targetsColumn: {
+  },
   statusColumn: {
     width: '100px',
   },
@@ -108,6 +110,11 @@ const BuildDeveloper = () => {
       className: classes.commentColumn,
     },
     {
+      name: 'targets',
+      headerName: 'Targets',
+      className: classes.targetsColumn,
+    },
+    {
       name: 'status',
       headerName: 'Status',
       className: classes.statusColumn,
@@ -124,11 +131,12 @@ const BuildDeveloper = () => {
     service => {
       const buildState = buildStates?.buildStates.find(build => build.service == service)
       return new Map<string, GridTableCellParams>([
-          ['service', { value: buildState?buildState.service:'' }],
+          ['service', { value: service }],
           ['version', { value: buildState?buildState.version:'' }],
           ['author', { value: buildState?buildState.author:'' }],
           ['time', { value: buildState?buildState.time:'' }],
           ['comment', { value: buildState?buildState.comment:'' }],
+          ['targets', { value: buildState?buildState.targets.toString():'' }],
           ['status', { value: buildState?buildState.status.toString():'' }],
           ['actions', { value: [<Button key='0' title='Start Build' onClick={ () => handleOnClick(service) }>
             {buildState?.status == BuildStatus.InProcess?<VisibilityIcon/>:<BuildIcon/>}

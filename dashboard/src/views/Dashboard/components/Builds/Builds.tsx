@@ -5,7 +5,7 @@ import {
   CardContent, CardHeader, FormControlLabel, Radio, RadioGroup,
 } from '@material-ui/core';
 import {
-  AccountRole,
+  AccountRole, BuildStatus, TimedBuildServiceState,
   useBuildStatesHistoryQuery, useBuildStatesQuery,
 } from "../../../../generated/graphql";
 import Alert from "@material-ui/lab/Alert";
@@ -50,7 +50,14 @@ const Builds = () => {
     onError(err) { setError('Query build states history error ' + err.message) },
   })
 
-  return (
+  let states: TimedBuildServiceState[] | undefined = undefined
+  if (mode == Mode.Active) {
+    states = buildStates?.buildStates.filter(state => state.status == BuildStatus.InProcess || state.status == BuildStatus.Failure)
+  } else if (mode == Mode.History) {
+    states = buildStatesHistory?.buildStatesHistory.filter(state => state.status != BuildStatus.InProcess)
+  }
+
+  return states ? (
     <Card>
       <CardHeader
         action={
@@ -64,7 +71,7 @@ const Builds = () => {
             </RadioGroup>
             <RefreshControl
               className={classes.control}
-              refresh={() => getBuildStatesHistory()}
+              refresh={() => { getBuildStates(); getBuildStatesHistory() } }
             />
           </FormGroup>
         }
@@ -72,13 +79,12 @@ const Builds = () => {
       />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          {mode == Mode.Active ? <BuildsTable buildStates={buildStates?.buildStates}/> :
-            <BuildsTable buildStates={buildStatesHistory?.buildStatesHistory}/> }
+          <BuildsTable buildStates={states}/>
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
       </CardContent>
     </Card>
-  );
+  ) : null;
 }
 
 export default Builds

@@ -190,7 +190,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
               <Button className={classes.control}
                       color="primary"
                       variant="contained"
-                      onClick={() => history.goBack()}
+                      onClick={() => history.go(-2)}
               >
                 Exit
               </Button>

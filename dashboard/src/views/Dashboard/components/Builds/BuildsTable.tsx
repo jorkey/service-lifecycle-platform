@@ -31,6 +31,9 @@ const useStyles = makeStyles((theme:any) => ({
   taskColumn: {
     width: '40px',
   },
+  targetsColumn: {
+    width: '50px',
+  },
   statusColumn: {
     width: '40px',
     paddingRight: '10px'
@@ -56,7 +59,6 @@ const BuildsTable: React.FC<BuildsTableProps> = (props) => {
   const classes = useStyles()
 
   const history = useHistory()
-  const routeMatch = useRouteMatch()
 
   const handleOnClick = useCallback((task: string) => {
     history.push('/logging/tasks/' + task)
@@ -90,6 +92,11 @@ const BuildsTable: React.FC<BuildsTableProps> = (props) => {
       className: classes.commentColumn,
     },
     {
+      name: 'targets',
+      headerName: 'Targets',
+      className: classes.targetsColumn,
+    },
+    {
       name: 'task',
       headerName: 'Task',
       className: classes.taskColumn,
@@ -108,6 +115,7 @@ const BuildsTable: React.FC<BuildsTableProps> = (props) => {
       ['author', { value: state.author }],
       ['time', { value: state.time }],
       ['comment', { value: state.comment }],
+      ['targets', { value: state.targets.toString() }],
       ['task', { value: state.task }],
       ['status', { value: state.status.toString() }],
     ])))

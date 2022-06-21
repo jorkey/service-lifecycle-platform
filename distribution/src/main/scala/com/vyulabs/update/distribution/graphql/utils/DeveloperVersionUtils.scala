@@ -10,7 +10,6 @@ import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDi
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.Logger
-import spray.json._
 
 import java.io.IOException
 import java.util.Date
@@ -62,27 +61,26 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
               runBuilderUtils.runDeveloperBuilder(task, service, arguments)
             cancel = cancelBuilder
             builderFuture
+              .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
+                Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))
               .flatMap { _ =>
                 cancel = None
                 if (buildClientVersion) {
                   val (future, newCancel) = clientVersionUtils.buildClientVersion(task, service,
                     ClientDistributionVersion(config.distribution, version.build, 0), author)
                   cancel = newCancel
-                  future
+                  future.flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
+                    Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
                 } else {
                   Future()
                 }
               }
-              .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
-                Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))
-              .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
-                Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
-          }
-          .andThen {
-            case Success(_) =>
-              buildStateUtils.setBuildState(state.copy(status = BuildStatus.Success))
-            case Failure(_) =>
-              buildStateUtils.setBuildState(state.copy(status = BuildStatus.Failure))
+              .andThen {
+                case Success(_) =>
+                  buildStateUtils.setBuildState(state.copy(status = BuildStatus.Success))
+                case Failure(_) =>
+                  buildStateUtils.setBuildState(state.copy(status = BuildStatus.Failure))
+              }
           }
         (future, Some(() => cancel.foreach(_.apply())))
       }).map(_.taskId)

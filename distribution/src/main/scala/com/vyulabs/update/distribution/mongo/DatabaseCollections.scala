@@ -156,9 +156,7 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
   val State_Builds = new SequencedCollection[ServerBuildServiceState]("state.builds", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.builds")
   } yield {
-    if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
-      new IndexOptions().unique(true)) else Future()
-    if (createIndices) collection.createIndex(Indexes.ascending("state"))
+    if (createIndices) collection.createIndex(Indexes.ascending("service", "targets")) else Future()
     collection
   }, createIndices = createIndices)
 
