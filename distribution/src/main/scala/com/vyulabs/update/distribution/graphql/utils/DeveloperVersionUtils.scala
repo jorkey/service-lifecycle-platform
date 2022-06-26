@@ -46,41 +46,52 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
       Seq(service),
       (task, logger) => {
         implicit val log = logger
-        var targets = Seq(BuildTarget.DeveloperVersion)
-        if (buildClientVersion) {
-          targets :+= BuildTarget.ClientVersion
-        }
-        val state = BuildServiceState(service,  targets, author, version.toString, comment, task, BuildStatus.InProcess)
         @volatile var cancel = Option.empty[() => Unit]
-        val future = buildStateUtils.setBuildState(state)
+        val arguments = Seq("buildDeveloperVersion",
+          s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}",
+          s"author=${author}", s"comment=${comment}")
+        val (builderFuture, cancelBuilder) =
+          runBuilderUtils.runDeveloperBuilder(task, service, arguments)
+        cancel = cancelBuilder
+        val developerState = BuildServiceState(service,  BuildTarget.DeveloperVersion,
+          author, version.toString, comment, task, BuildStatus.InProcess)
+        val clientState = BuildServiceState(service,  BuildTarget.ClientVersion,
+          author, ClientDistributionVersion.from(config.distribution, version, 0).toString, "", task, BuildStatus.InProcess)
+        val future = buildStateUtils.setBuildState(developerState)
+          .flatMap(_ => builderFuture)
+          .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
+            Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))
+          .andThen {
+            case Success(_) =>
+              (if (buildClientVersion) {
+                buildStateUtils.setBuildState(clientState)
+              } else  {
+                Future()
+              }).flatMap { _ =>
+                buildStateUtils.setBuildState(developerState.copy(status = BuildStatus.Success))
+              }
+            case Failure(_) =>
+              buildStateUtils.setBuildState(developerState.copy(status = BuildStatus.Failure))
+          }
           .flatMap { _ =>
-            val arguments = Seq("buildDeveloperVersion",
-              s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}",
-              s"author=${author}", s"comment=${comment}")
-            val (builderFuture, cancelBuilder) =
-              runBuilderUtils.runDeveloperBuilder(task, service, arguments)
-            cancel = cancelBuilder
-            builderFuture
-              .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
-                Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))
-              .flatMap { _ =>
-                cancel = None
-                if (buildClientVersion) {
-                  val (future, newCancel) = clientVersionUtils.buildClientVersion(task, service,
-                    ClientDistributionVersion(config.distribution, version.build, 0), author)
-                  cancel = newCancel
-                  future.flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
-                    Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
-                } else {
-                  Future()
+            cancel = None
+            if (buildClientVersion) {
+              val (future, newCancel) = clientVersionUtils.buildClientVersion(task, service,
+                ClientDistributionVersion(config.distribution, version.build, 0), author)
+              cancel = newCancel
+              future
+                .flatMap(_ => buildStateUtils.setBuildState(clientState))
+                .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
+                  Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
+                .andThen {
+                  case Success(_) =>
+                    buildStateUtils.setBuildState(clientState.copy(status = BuildStatus.Success))
+                  case Failure(_) =>
+                    buildStateUtils.setBuildState(clientState.copy(status = BuildStatus.Failure))
                 }
-              }
-              .andThen {
-                case Success(_) =>
-                  buildStateUtils.setBuildState(state.copy(status = BuildStatus.Success))
-                case Failure(_) =>
-                  buildStateUtils.setBuildState(state.copy(status = BuildStatus.Failure))
-              }
+            } else {
+              Future()
+            }
           }
         (future, Some(() => cancel.foreach(_.apply())))
       }).map(_.taskId)

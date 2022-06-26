@@ -2,9 +2,10 @@ import React, {useCallback} from 'react';
 import { makeStyles } from '@material-ui/styles';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
-import {TasksQuery, TimedBuildServiceState} from "../../../../generated/graphql";
+import {BuildStatus, TasksQuery, TimedBuildServiceState} from "../../../../generated/graphql";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 import {useHistory, useRouteMatch} from "react-router-dom";
+import {InputLabel, Link} from "@material-ui/core";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -15,7 +16,8 @@ const useStyles = makeStyles((theme:any) => ({
     minWidth: 800
   },
   versionsTable: {
-    marginTop: 20
+    marginTop: 20,
+    maxHeight: 250
   },
   serviceColumn: {
     width: '150px',
@@ -28,10 +30,7 @@ const useStyles = makeStyles((theme:any) => ({
   },
   commentColumn: {
   },
-  taskColumn: {
-    width: '40px',
-  },
-  targetsColumn: {
+  targetColumn: {
     width: '50px',
   },
   statusColumn: {
@@ -92,14 +91,9 @@ const BuildsTable: React.FC<BuildsTableProps> = (props) => {
       className: classes.commentColumn,
     },
     {
-      name: 'targets',
-      headerName: 'Targets',
-      className: classes.targetsColumn,
-    },
-    {
-      name: 'task',
-      headerName: 'Task',
-      className: classes.taskColumn,
+      name: 'target',
+      headerName: 'Target',
+      className: classes.targetColumn,
     },
     {
       name: 'status',
@@ -115,9 +109,13 @@ const BuildsTable: React.FC<BuildsTableProps> = (props) => {
       ['author', { value: state.author }],
       ['time', { value: state.time }],
       ['comment', { value: state.comment }],
-      ['targets', { value: state.targets.toString() }],
-      ['task', { value: state.task }],
-      ['status', { value: state.status.toString() }],
+      ['target', { value: state.target.toString() }],
+      ['status', { value: [
+          <InputLabel style={{color:
+              state.status==BuildStatus.InProcess?'blue':state.status==BuildStatus.Success?'green':'red', paddingBottom: '4px'}}>
+            {state.status.toString()}
+          </InputLabel>
+      ] }],
     ])))
 
   return rows?.length?<GridTable className={classes.versionsTable}

@@ -94,7 +94,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
     variables: { service: service, version: { build: Version.parseBuild(version) },
       comment: comment, buildClientVersion: buildClientVersion },
     onCompleted(data) {
-      history.push(
+      history.replace(
         `${routeMatch.url.substring(0, routeMatch.url.indexOf("/start"))}/monitor/${data.buildDeveloperVersion}`)
     },
     onError(err) { setError('Build version error ' + err.message) }

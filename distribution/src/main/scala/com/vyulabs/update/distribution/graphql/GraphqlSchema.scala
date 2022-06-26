@@ -125,7 +125,7 @@ object GraphqlSchema {
   val OptionOnlyActiveArg = Argument("onlyActive", OptionInputType(BooleanType))
   val OptionEnvironmentArg = Argument("environment", OptionInputType(ListInputType(NamedStringValueInputType)))
   val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
-  val OptionBuildTargetsArg = Argument("targets", OptionInputType(ListInputType(BuildTargetType)))
+  val OptionBuildTargetArg = Argument("target", OptionInputType(BuildTargetType))
 
   // Queries
 
@@ -252,16 +252,16 @@ object GraphqlSchema {
 
       // State
       Field("buildStates", ListType(BuildServiceStateType),
-        arguments = OptionServiceArg :: OptionBuildTargetsArg :: Nil,
+        arguments = OptionServiceArg :: OptionBuildTargetArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getBuildStates(c.arg(OptionServiceArg),
-          c.arg(OptionBuildTargetsArg)) }),
+          c.arg(OptionBuildTargetArg)) }),
 
       Field("buildStatesHistory", ListType(BuildServiceStateType),
-        arguments = OptionServiceArg :: OptionBuildTargetsArg :: LimitArg :: Nil,
+        arguments = OptionServiceArg :: OptionBuildTargetArg :: LimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getBuildStatesHistory(c.arg(OptionServiceArg),
-          c.arg(OptionBuildTargetsArg), c.arg(LimitArg)) }),
+          c.arg(OptionBuildTargetArg), c.arg(LimitArg)) }),
 
       Field("instanceStates", ListType(DistributionServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,

@@ -3,15 +3,17 @@ import { makeStyles } from '@material-ui/styles';
 import {
   Box,
   Card,
-  CardContent, CardHeader, Select,
+  CardContent, CardHeader, InputLabel, Link, Select,
 } from '@material-ui/core';
 import {
+  BuildStatus,
+  BuildTarget,
   ClientDesiredVersion,
   ClientDistributionVersion,
   DeveloperDesiredVersionInput,
   DeveloperDistributionVersion,
-  DistributionProviderInfo,
-  useBuildClientVersionsMutation,
+  DistributionProviderInfo, TimedBuildServiceState,
+  useBuildClientVersionsMutation, useBuildStatesQuery,
   useClientDesiredVersionsQuery,
   useClientVersionsInfoQuery,
   useDeveloperDesiredVersionsLazyQuery,
@@ -76,7 +78,7 @@ interface RowData {
   service: string
   providerVersion?: DeveloperDistributionVersion
   developerVersion?: DeveloperDistributionVersion
-  clientVersion?: ClientDistributionVersion
+  lastClientBuild?: TimedBuildServiceState
   testedVersion?: DeveloperDistributionVersion
 }
 
@@ -100,10 +102,11 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query providers info error ' + err.message) }
   })
-  const { data: clientDesiredVersions, refetch: getClientDesiredVersions } = useClientDesiredVersionsQuery({
+  const { data: clientBuildStates, refetch: getClientBuildStates } = useBuildStatesQuery({
+    variables: { target: BuildTarget.ClientVersion },
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    onCompleted() { setRows(makeRowsData()) },
-    onError(err) { setError('Query client desired versions error ' + err.message) },
+    onError(err) { setError('Query client build states error ' + err.message) },
+    onCompleted() { setError(undefined) }
   })
   const { data: clientVersions } = useClientVersionsInfoQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
@@ -150,7 +153,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       setError('Build version error ' + err.message)
     },
     onCompleted(data) {
-      history.push(
+      history.replace(
         `${routeMatch.url.substring(0, routeMatch.url.indexOf("/start"))}/monitor/${data.buildClientVersions}`)
     }
   })
@@ -198,7 +201,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   }
 
   const makeRowsData: () => RowData[] = () => {
-    if (clientDesiredVersions && clientVersions &&
+    if (clientBuildStates && clientVersions &&
         ((!provider && selfServicesProfile.data) || (providerDesiredVersions.data && testedVersions.data?.testedVersions))) {
       const services = makeServicesList()
       return services.sort().map(
@@ -207,8 +210,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
             .find(version => version.service == service)?.version:undefined
           const developerVersion = developerDesiredVersions.data?.developerDesiredVersions
             .find(version => version.service == service)?.version
-          const clientVersion = clientDesiredVersions.clientDesiredVersions
-            .find(version => version.service == service)?.version
+          const lastClientBuild = clientBuildStates.buildStates
+            .find(state => state.service == service)
           const testedVersion = testedVersions.data?.testedVersions?.find(version => version.service == service)
           const providerTestedVersion = providerTestedVersions?.data?.providerTestedVersions
             .find(version => version.service == service)
@@ -225,7 +228,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
             service: service,
             providerVersion: providerVersion,
             developerVersion: developerVersion,
-            clientVersion: clientVersion,
+            lastClientBuild: lastClientBuild,
             testedVersion: testedVersion ? testedVersion?.version : providerTestedVersion?.version
           } as RowData
         })
@@ -257,8 +260,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       className: classes.versionColumn,
     },
     {
-      name: 'clientVersion',
-      headerName: 'Client Desired Version',
+      name: 'lastClientBuild',
+      headerName: 'Last Client Build',
       className: classes.versionColumn,
     },
     {
@@ -279,31 +282,30 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       ['service', { value: row.service }],
       ['providerVersion', { value: row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):'' }],
       ['developerVersion', { value: row.developerVersion?Version.developerDistributionVersionToString(row.developerVersion):'' }],
-      ['clientVersion', { value: row.clientVersion?Version.clientDistributionVersionToString(row.clientVersion):'' }],
+      ['lastClientBuild', { value: row.lastClientBuild?[<Link href={'/logging/tasks/' + row.lastClientBuild.task} underline='always'>
+          <InputLabel style={{color:
+              row.lastClientBuild.status==BuildStatus.InProcess?'blue':row.lastClientBuild.status==BuildStatus.Success?'green':'red',
+            paddingBottom: '4px'}}>
+            { (row.lastClientBuild.status==BuildStatus.InProcess?'-> ':'') + row.lastClientBuild.version}
+          </InputLabel>
+        </Link>]:[] }],
       ['testedVersion', { value: row.testedVersion?Version.developerDistributionVersionToString(row.testedVersion):'' }]
     ])})
 
-  function clientVersionToDeveloperVersion(info: ClientDesiredVersion): DeveloperDesiredVersionInput {
-    return {
-      service: info.service,
-      version: { distribution: info.version.distribution, build: info.version.developerBuild }
-    }
-  }
-
   function isTested() {
-    const installedVersions =
+    const lastBuilds =
       (provider?
-          clientDesiredVersions?.clientDesiredVersions?.filter(version => version.version.distribution == provider.distribution):
-          clientDesiredVersions?.clientDesiredVersions?.filter(version => version.version.distribution == localStorage.getItem('distribution')))
-      ?.map(version => clientVersionToDeveloperVersion(version))
-    if (installedVersions) {
+        clientBuildStates?.buildStates?.filter(build => Version.parseClientDistributionVersion(build.version).distribution == provider.distribution):
+        clientBuildStates?.buildStates?.filter(state => Version.parseClientDistributionVersion(state.version).distribution == localStorage.getItem('distribution')))
+    if (lastBuilds) {
       const markedAsTested = provider?providerTestedVersions?.data?.providerTestedVersions:testedVersions?.data?.testedVersions
-      return !installedVersions.find(version => {
+      return !lastBuilds.find(build => {
+        const buildVersion = Version.clientVersionToDeveloperVersion(Version.parseClientDistributionVersion(build.version))
         const testedVersion = markedAsTested?.find(v => {
-          return version.service == v.service
+          return build.service == v.service
         })
         if (testedVersion) {
-          return Version.compareDeveloperDistributionVersions(version.version, testedVersion.version) != 0
+          return build.status == BuildStatus.Success && Version.compareDeveloperDistributionVersions(buildVersion, testedVersion.version) != 0
         } else {
           return true
         }
@@ -349,7 +351,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
                     getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
                   }
                   getDeveloperDesiredVersions()
-                  getClientDesiredVersions() }}
+                  getClientBuildStates() }}
               />
             </FormGroup>
           }
@@ -364,13 +366,13 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
                onRowsSelected={(rowsNum) => {
                  setRows(rows.map((row, index) => { return {
                    selected: (rowsNum.find(row => row == index) != undefined)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
-                   developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion
+                   developerVersion: row.developerVersion, lastClientBuild: row.lastClientBuild, testedVersion: row.testedVersion
                  } as RowData }))
                }}
                onRowsUnselected={(rowsNum) => {
                  setRows(rows.map((row, index) => { return {
                    selected: (rowsNum.find(row => row == index) != undefined)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
-                   developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion
+                   developerVersion: row.developerVersion, lastClientBuild: row.lastClientBuild, testedVersion: row.testedVersion
                  } as RowData }))
                }}
             />
@@ -387,7 +389,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       >
         Update Client
       </Button>
-      {clientDesiredVersions?<Button className={classes.control}
+      {clientBuildStates?<Button className={classes.control}
                                      color="primary"
                                      variant="contained"
                                      disabled={isTested()}
@@ -396,18 +398,28 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
                                          setProviderTestedVersions({
                                            variables: {
                                              distribution: provider.distribution,
-                                             versions: clientDesiredVersions?.clientDesiredVersions
-                                               .filter(info => info.version.distribution == provider.distribution)
-                                               .map(version => clientVersionToDeveloperVersion(version)
+                                             versions: clientBuildStates?.buildStates
+                                               .filter(build => build.status == BuildStatus.Success)
+                                               .filter(build => Version.parseClientDistributionVersion(build.version).distribution == provider.distribution)
+                                               .map(build => {
+                                                   return {
+                                                     service: build.service,
+                                                     version: Version.clientVersionToDeveloperVersion(Version.parseClientDistributionVersion(build.version))
+                                                   }}
                                                )
                                            }
                                          })
                                        } else {
                                          setTestedVersions({
                                            variables: {
-                                             versions: clientDesiredVersions?.clientDesiredVersions
-                                               .filter(version => version.version.distribution == localStorage.getItem('distribution'))
-                                               .map(version => clientVersionToDeveloperVersion(version))
+                                             versions: clientBuildStates?.buildStates
+                                               .filter(build => build.status == BuildStatus.Success)
+                                               .filter(build => Version.parseClientDistributionVersion(build.version).distribution == localStorage.getItem('distribution'))
+                                               .map(build => {
+                                                 return {
+                                                   service: build.service,
+                                                   version: Version.clientVersionToDeveloperVersion(Version.parseClientDistributionVersion(build.version))
+                                                 }})
                                            }})
                                        }}
                                      }

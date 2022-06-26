@@ -1,6 +1,6 @@
 import React, {useCallback, useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
-import {Button, Card, CardContent, CardHeader,} from '@material-ui/core';
+import {Button, Card, CardContent, CardHeader, InputLabel, Link,} from '@material-ui/core';
 import {
   BuildStatus,
   BuildTarget,
@@ -27,17 +27,15 @@ const useStyles = makeStyles((theme:any) => ({
     width: '150px',
   },
   versionColumn: {
+    width: '125px',
+  },
+  clientVersionColumn: {
     width: '150px',
   },
   authorColumn: {
     width: '150px',
   },
   commentColumn: {
-  },
-  targetsColumn: {
-  },
-  statusColumn: {
-    width: '100px',
   },
   timeColumn: {
     width: '200px',
@@ -67,20 +65,26 @@ const BuildDeveloper = () => {
     onError(err) { setError('Query developer services error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-  const { data: buildStates, refetch: getBuildStates } = useBuildStatesQuery({
-    variables: { targets: [ BuildTarget.DeveloperVersion ] },
+  const { data: developerBuildStates, refetch: getDeveloperBuildStates } = useBuildStatesQuery({
+    variables: { target: BuildTarget.DeveloperVersion },
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    onError(err) { setError('Query build states error ' + err.message) },
+    onError(err) { setError('Query developer build states error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
+  const { data: clientBuildStates, refetch: getClientBuildStates } = useBuildStatesQuery({
+    variables: { target: BuildTarget.ClientVersion },
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    onError(err) { setError('Query client build states error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const handleOnClick = useCallback((service: string) => {
-    const task = buildStates?.buildStates
+    const task = developerBuildStates?.buildStates
       .find(build => build.service == service && build.status == BuildStatus.InProcess)?.task
     return task ?
       history.push(`${routeMatch.url}/monitor/${task}`) :
       history.push(`${routeMatch.url}/start/${service}`)
-  }, [ buildStates, history ]);
+  }, [ clientBuildStates, history ]);
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -89,9 +93,14 @@ const BuildDeveloper = () => {
       className: classes.serviceColumn,
     },
     {
-      name: 'version',
-      headerName: 'Last Version',
+      name: 'lastBuild',
+      headerName: 'Last Build',
       className: classes.versionColumn,
+    },
+    {
+      name: 'lastClientBuild',
+      headerName: 'Last Client Build',
+      className: classes.clientVersionColumn,
     },
     {
       name: 'author',
@@ -110,16 +119,6 @@ const BuildDeveloper = () => {
       className: classes.commentColumn,
     },
     {
-      name: 'targets',
-      headerName: 'Targets',
-      className: classes.targetsColumn,
-    },
-    {
-      name: 'status',
-      headerName: 'Status',
-      className: classes.statusColumn,
-    },
-    {
       name: 'actions',
       headerName: 'Actions',
       type: 'elements',
@@ -129,17 +128,29 @@ const BuildDeveloper = () => {
 
   const rows = services?.buildDeveloperServicesConfig.map(s => s.service).sort().map(
     service => {
-      const buildState = buildStates?.buildStates.find(build => build.service == service)
+      const developerState = developerBuildStates?.buildStates.find(build => build.service == service)
+      const clientState = clientBuildStates?.buildStates.find(build => build.service == service)
       return new Map<string, GridTableCellParams>([
           ['service', { value: service }],
-          ['version', { value: buildState?buildState.version:'' }],
-          ['author', { value: buildState?buildState.author:'' }],
-          ['time', { value: buildState?buildState.time:'' }],
-          ['comment', { value: buildState?buildState.comment:'' }],
-          ['targets', { value: buildState?buildState.targets.toString():'' }],
-          ['status', { value: buildState?buildState.status.toString():'' }],
+          ['lastBuild', { value: developerState?[<Link href={'/logging/tasks/' + developerState.task} underline='always'>
+              <InputLabel style={{color:
+                  developerState.status==BuildStatus.InProcess?'blue':developerState.status==BuildStatus.Success?'green':'red',
+                paddingBottom: '4px'}}>
+                { (developerState.status==BuildStatus.InProcess?'-> ':'') + developerState.version}
+              </InputLabel>
+            </Link>]:[] }],
+          ['lastClientBuild', { value: clientState?[<Link href={'/logging/tasks/' + clientState.task} underline='always'>
+              <InputLabel style={{color:
+                  clientState.status==BuildStatus.InProcess?'blue':clientState.status==BuildStatus.Success?'green':'red',
+                paddingBottom: '4px'}}>
+                { (clientState.status==BuildStatus.InProcess?'-> ':'') + clientState.version}
+              </InputLabel>
+            </Link>]:[] }],
+          ['author', { value: developerState?developerState.author:'' }],
+          ['time', { value: developerState?developerState.time:'' }],
+          ['comment', { value: developerState?developerState.comment:'' }],
           ['actions', { value: [<Button key='0' title='Start Build' onClick={ () => handleOnClick(service) }>
-            {buildState?.status == BuildStatus.InProcess?<VisibilityIcon/>:<BuildIcon/>}
+            {developerState?.status == BuildStatus.InProcess?<VisibilityIcon/>:<BuildIcon/>}
           </Button>] }]
         ])
     })
@@ -151,7 +162,7 @@ const BuildDeveloper = () => {
           <FormGroup row>
             <RefreshControl
               className={classes.control}
-              refresh={ () => { getServices(); getBuildStates() }}
+              refresh={ () => { getServices(); getDeveloperBuildStates(); getClientBuildStates() }}
             />
           </FormGroup>
         }

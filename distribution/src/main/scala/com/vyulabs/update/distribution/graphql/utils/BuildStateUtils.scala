@@ -30,34 +30,33 @@ trait BuildStateUtils extends SprayJsonSupport {
 
   def setBuildState(state: BuildServiceState): Future[Unit] = {
     val serviceArg = Filters.eq("service", state.service)
-    val targetsArg = if (state.targets.contains(BuildTarget.DeveloperVersion)) Filters.eq("targets", BuildTarget.DeveloperVersion.toString)
-                     else Filters.eq("targets", state.targets.map(_.toString).asJava)
+    val targetsArg = Filters.eq("target", state.target.toString)
     val filters = Filters.and(serviceArg, targetsArg)
     collections.State_Builds.update(filters, _ => Some(
-      ServerBuildServiceState(state.service, state.targets.map(_.toString),
+      ServerBuildServiceState(state.service, state.target.toString,
         state.author, state.version, state.comment, state.task, state.status.toString))).map(_ => Unit)
   }
 
-  def getBuildStates(service: Option[ServiceId], targets: Option[Seq[BuildTarget]]): Future[Seq[TimedBuildServiceState]] = {
+  def getBuildStates(service: Option[ServiceId], target: Option[BuildTarget]): Future[Seq[TimedBuildServiceState]] = {
     val serviceArg = service.map { service => Filters.eq("service", service) }
-    val targetsArg = targets.map { targets => Filters.all("targets", targets.map(_.toString).asJava) }
-    val args = serviceArg.toSeq ++ targetsArg
+    val targetArg = target.map { target => Filters.eq("target", target.toString) }
+    val args = serviceArg.toSeq ++ targetArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.State_Builds.findSequenced(filters).map(_.map(
       s => TimedBuildServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
-        s.document.service, s.document.targets.map(BuildTarget.withName(_)), s.document.author, s.document.version,
+        s.document.service, BuildTarget.withName(s.document.target), s.document.author, s.document.version,
         s.document.comment, s.document.task, BuildStatus.withName(s.document.status))))
   }
 
-  def getBuildStatesHistory(service: Option[ServiceId], targets: Option[Seq[BuildTarget]], limit: Int)
+  def getBuildStatesHistory(service: Option[ServiceId], target: Option[BuildTarget], limit: Int)
       : Future[Seq[TimedBuildServiceState]] = {
     val serviceArg = service.map { service => Filters.eq("service", service) }
-    val targetsArg = targets.map { targets => Filters.all("targets", targets.map(_.toString).asJava) }
-    val args = serviceArg.toSeq ++ targetsArg
+    val targetArg = target.map { target => Filters.eq("target", target.toString) }
+    val args = serviceArg.toSeq ++ targetArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.State_Builds.history(filters, Some(limit)).map(_.map(
       s => TimedBuildServiceState(s.modifyTime.getOrElse(throw new IOException("No modifyTime in document")),
-        s.document.service, s.document.targets.map(BuildTarget.withName(_)), s.document.author, s.document.version,
+        s.document.service, BuildTarget.withName(s.document.target), s.document.author, s.document.version,
         s.document.comment, s.document.task, BuildStatus.withName(s.document.status))))
   }
 

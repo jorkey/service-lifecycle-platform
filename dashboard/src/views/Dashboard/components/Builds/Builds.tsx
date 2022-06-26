@@ -29,14 +29,14 @@ const useStyles = makeStyles((theme:any) => ({
 }));
 
 export enum Mode {
-  Active = 'Active',
+  Unfinished = 'Unfinished',
   History = 'History'
 }
 
 const Builds = () => {
   const classes = useStyles()
 
-  const [mode, setMode] = useState<Mode>(Mode.Active)
+  const [mode, setMode] = useState<Mode>(Mode.Unfinished)
   const [error, setError] = useState<string>()
 
   const { data: buildStates, refetch: getBuildStates } = useBuildStatesQuery({
@@ -51,10 +51,11 @@ const Builds = () => {
   })
 
   let states: TimedBuildServiceState[] | undefined = undefined
-  if (mode == Mode.Active) {
+  if (mode == Mode.Unfinished) {
     states = buildStates?.buildStates.filter(state => state.status == BuildStatus.InProcess || state.status == BuildStatus.Failure)
   } else if (mode == Mode.History) {
     states = buildStatesHistory?.buildStatesHistory.filter(state => state.status != BuildStatus.InProcess)
+      .sort((s1, s2) => s1.time > s2.time ? -1 : s1.time < s2.time ? 1 : 0)
   }
 
   return states ? (
@@ -66,7 +67,7 @@ const Builds = () => {
                         value={mode}
                         onChange={ event => setMode(event.target.value as Mode) }
             >
-              <FormControlLabel value={Mode.Active} control={<Radio/>} label="Active"/>
+              <FormControlLabel value={Mode.Unfinished} control={<Radio/>} label="Unfinished"/>
               <FormControlLabel value={Mode.History} control={<Radio/>} label="History"/>
             </RadioGroup>
             <RefreshControl
@@ -75,7 +76,7 @@ const Builds = () => {
             />
           </FormGroup>
         }
-        title={mode==Mode.Active?'Active Builds':'Builds History'}
+        title={mode==Mode.Unfinished?'Unfinished Builds':'Builds History'}
       />
       <CardContent className={classes.content}>
         <div className={classes.inner}>

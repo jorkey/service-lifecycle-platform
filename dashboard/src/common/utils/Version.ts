@@ -1,4 +1,5 @@
 import {
+  ClientDesiredVersion,
   ClientDistributionVersion, ClientVersionInfo, DeveloperDesiredVersionInput,
   DeveloperDistributionVersion,
 } from "../../generated/graphql";
@@ -117,6 +118,10 @@ export class Version {
       }
     }
     return nextBuild
+  }
+
+  static clientVersionToDeveloperVersion(version: ClientDistributionVersion): DeveloperDistributionVersion {
+    return { distribution: version.distribution, build: version.developerBuild }
   }
 
   static clientVersionInfoToDeveloperVersion(version: ClientVersionInfo): DeveloperDesiredVersionInput {

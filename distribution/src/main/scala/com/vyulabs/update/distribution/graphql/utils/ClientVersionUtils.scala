@@ -42,7 +42,7 @@ trait ClientVersionUtils {
       (task, logger) => {
         implicit val log = logger
         val states = versions.map(version =>
-          BuildServiceState(version.service, Seq(BuildTarget.ClientVersion), author,
+          BuildServiceState(version.service, BuildTarget.ClientVersion, author,
             version.version.toString, "", task, BuildStatus.InProcess))
         ((for {
           _ <- Future.sequence(states.map(buildStateUtils.setBuildState(_)))

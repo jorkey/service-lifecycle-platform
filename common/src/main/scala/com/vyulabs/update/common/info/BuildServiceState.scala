@@ -28,7 +28,7 @@ object BuildStatus extends Enumeration {
   }
 }
 
-case class BuildServiceState(service: ServiceId, targets: Seq[BuildTarget],
+case class BuildServiceState(service: ServiceId, target: BuildTarget,
                              author: AccountId, version: String, comment: String,
                              task: TaskId, status: BuildStatus)
 
@@ -36,11 +36,11 @@ object BuildServiceState extends DefaultJsonProtocol {
   implicit val buildDeveloperServiceStateJson = jsonFormat7(BuildServiceState.apply)
 }
 
-case class ServerBuildServiceState(service: ServiceId, targets: Seq[String],
+case class ServerBuildServiceState(service: ServiceId, target: String,
                                    author: AccountId, version: String, comment: String,
                                    task: TaskId, status: String)
 
-case class TimedBuildServiceState(time: Date, service: ServiceId, targets: Seq[BuildTarget],
+case class TimedBuildServiceState(time: Date, service: ServiceId, target: BuildTarget,
                                   author: AccountId, version: String,
                                   comment: String, task: TaskId, status: BuildStatus)
 

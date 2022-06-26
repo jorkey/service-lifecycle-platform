@@ -736,13 +736,13 @@ export type QueryInstalledDesiredVersionsArgs = {
 
 export type QueryBuildStatesArgs = {
   service?: Maybe<Scalars['String']>;
-  targets?: Maybe<Array<BuildTarget>>;
+  target?: Maybe<BuildTarget>;
 };
 
 
 export type QueryBuildStatesHistoryArgs = {
   service?: Maybe<Scalars['String']>;
-  targets?: Maybe<Array<BuildTarget>>;
+  target?: Maybe<BuildTarget>;
   limit: Scalars['Int'];
 };
 
@@ -949,7 +949,7 @@ export type TimedBuildServiceState = {
   __typename?: 'TimedBuildServiceState';
   time: Scalars['Date'];
   service: Scalars['String'];
-  targets: Array<BuildTarget>;
+  target: BuildTarget;
   author: Scalars['String'];
   version: Scalars['String'];
   comment: Scalars['String'];
@@ -1372,7 +1372,7 @@ export type SetClientDesiredVersionsMutation = (
 
 export type BuildStatesQueryVariables = Exact<{
   service?: Maybe<Scalars['String']>;
-  targets?: Maybe<Array<BuildTarget> | BuildTarget>;
+  target?: Maybe<BuildTarget>;
 }>;
 
 
@@ -1380,13 +1380,13 @@ export type BuildStatesQuery = (
   { __typename?: 'Query' }
   & { buildStates: Array<(
     { __typename?: 'TimedBuildServiceState' }
-    & Pick<TimedBuildServiceState, 'time' | 'service' | 'targets' | 'author' | 'version' | 'comment' | 'task' | 'status'>
+    & Pick<TimedBuildServiceState, 'time' | 'service' | 'target' | 'author' | 'version' | 'comment' | 'task' | 'status'>
   )> }
 );
 
 export type BuildStatesHistoryQueryVariables = Exact<{
   service?: Maybe<Scalars['String']>;
-  targets?: Maybe<Array<BuildTarget> | BuildTarget>;
+  target?: Maybe<BuildTarget>;
   limit: Scalars['Int'];
 }>;
 
@@ -1395,7 +1395,7 @@ export type BuildStatesHistoryQuery = (
   { __typename?: 'Query' }
   & { buildStatesHistory: Array<(
     { __typename?: 'TimedBuildServiceState' }
-    & Pick<TimedBuildServiceState, 'time' | 'service' | 'targets' | 'author' | 'version' | 'comment' | 'task' | 'status'>
+    & Pick<TimedBuildServiceState, 'time' | 'service' | 'target' | 'author' | 'version' | 'comment' | 'task' | 'status'>
   )> }
 );
 
@@ -3168,11 +3168,11 @@ export type SetClientDesiredVersionsMutationHookResult = ReturnType<typeof useSe
 export type SetClientDesiredVersionsMutationResult = Apollo.MutationResult<SetClientDesiredVersionsMutation>;
 export type SetClientDesiredVersionsMutationOptions = Apollo.BaseMutationOptions<SetClientDesiredVersionsMutation, SetClientDesiredVersionsMutationVariables>;
 export const BuildStatesDocument = gql`
-    query buildStates($service: String, $targets: [BuildTarget!]) {
-  buildStates(service: $service, targets: $targets) {
+    query buildStates($service: String, $target: BuildTarget) {
+  buildStates(service: $service, target: $target) {
     time
     service
-    targets
+    target
     author
     version
     comment
@@ -3195,7 +3195,7 @@ export const BuildStatesDocument = gql`
  * const { data, loading, error } = useBuildStatesQuery({
  *   variables: {
  *      service: // value for 'service'
- *      targets: // value for 'targets'
+ *      target: // value for 'target'
  *   },
  * });
  */
@@ -3211,11 +3211,11 @@ export type BuildStatesQueryHookResult = ReturnType<typeof useBuildStatesQuery>;
 export type BuildStatesLazyQueryHookResult = ReturnType<typeof useBuildStatesLazyQuery>;
 export type BuildStatesQueryResult = Apollo.QueryResult<BuildStatesQuery, BuildStatesQueryVariables>;
 export const BuildStatesHistoryDocument = gql`
-    query buildStatesHistory($service: String, $targets: [BuildTarget!], $limit: Int!) {
-  buildStatesHistory(service: $service, targets: $targets, limit: $limit) {
+    query buildStatesHistory($service: String, $target: BuildTarget, $limit: Int!) {
+  buildStatesHistory(service: $service, target: $target, limit: $limit) {
     time
     service
-    targets
+    target
     author
     version
     comment
@@ -3238,7 +3238,7 @@ export const BuildStatesHistoryDocument = gql`
  * const { data, loading, error } = useBuildStatesHistoryQuery({
  *   variables: {
  *      service: // value for 'service'
- *      targets: // value for 'targets'
+ *      target: // value for 'target'
  *      limit: // value for 'limit'
  *   },
  * });
