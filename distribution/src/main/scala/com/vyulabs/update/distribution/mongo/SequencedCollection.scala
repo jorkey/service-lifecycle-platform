@@ -28,7 +28,8 @@ case class NoSuchDocument() extends Exception
 
 class SequencedCollection[T: ClassTag](val name: String,
                                        collection: Future[MongoDbCollection[BsonDocument]],
-                                       historyExpireDays: Int = 7, modifiable: Boolean = true, createIndices: Boolean = true)
+                                       historyExpire: FiniteDuration = FiniteDuration(7, TimeUnit.DAYS),
+                                       modifiable: Boolean = true, createIndices: Boolean = true)
                                       (implicit system: ActorSystem, executionContext: ExecutionContext,
                                        codecRegistry: CodecRegistry) {
   private implicit val log = Logging(system, this.getClass)
@@ -48,7 +49,7 @@ class SequencedCollection[T: ClassTag](val name: String,
     collection.map(_.createIndex(Indexes.ascending("_sequence")))
     if (modifiable) {
       collection.map(_.createIndex(Indexes.ascending("_archiveTime"),
-        new IndexOptions().expireAfter(historyExpireDays, TimeUnit.DAYS)))
+        new IndexOptions().expireAfter(historyExpire.length, historyExpire.unit)))
     }
   }
 
@@ -176,7 +177,7 @@ class SequencedCollection[T: ClassTag](val name: String,
                     _ <- collection.updateOne(Filters.eq("_sequence", docId),
                       Updates.combine(Updates.set("_replacedBy", new BsonInt64(sequence)),
                         Updates.set("_archiveTime", new BsonDateTime(
-                          System.currentTimeMillis() - FiniteDuration(historyExpireDays, TimeUnit.DAYS).toMillis + 60000))))
+                          System.currentTimeMillis() - historyExpire.toMillis + 60000))))
                     result <- insert(collection, document, sequence).map(_ => 1)
                     _ <- collection.updateOne(Filters.eq("_sequence", docId),
                       Updates.combine(Updates.unset("_replacedBy"),

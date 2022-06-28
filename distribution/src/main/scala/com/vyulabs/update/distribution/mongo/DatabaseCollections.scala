@@ -99,7 +99,7 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
 
   val Developer_DesiredVersions = new SequencedCollection[DeveloperDesiredVersions]("developer.desiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.desiredVersions")
-  } yield collection, createIndices = createIndices)
+  } yield collection, FiniteDuration(90, TimeUnit.DAYS), createIndices = createIndices)
 
   val Developer_ServiceProfiles = new SequencedCollection[ServicesProfile]("developer.serviceProfiles", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.serviceProfiles")
@@ -136,7 +136,7 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
 
   val Client_DesiredVersions = new SequencedCollection[ClientDesiredVersions]("client.desiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.desiredVersions")
-  } yield collection, createIndices = createIndices)
+  } yield collection, FiniteDuration(90, TimeUnit.DAYS), createIndices = createIndices)
 
   val Client_ProvidersInfo = new SequencedCollection[DistributionProviderInfo]("client.providers", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.providers")
@@ -158,7 +158,7 @@ class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
   } yield {
     if (createIndices) collection.createIndex(Indexes.ascending("service", "targets")) else Future()
     collection
-  }, createIndices = createIndices)
+  }, FiniteDuration(255, TimeUnit.DAYS), createIndices = createIndices)
 
   val State_Instances = new SequencedCollection[DistributionInstanceState]("state.instances", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.instances")
