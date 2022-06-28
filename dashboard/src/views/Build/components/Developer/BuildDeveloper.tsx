@@ -49,6 +49,19 @@ const useStyles = makeStyles((theme:any) => ({
   },
   alert: {
     marginTop: 25
+  },
+  successText: {
+    color: "green",
+    paddingBottom: '4px'
+  },
+  failureText: {
+    color: "red",
+    textDecoration: "line-through",
+    paddingBottom: '4px'
+  },
+  inProcessText: {
+    color: "blue",
+    paddingBottom: '4px'
   }
 }));
 
@@ -133,16 +146,14 @@ const BuildDeveloper = () => {
       return new Map<string, GridTableCellParams>([
           ['service', { value: service }],
           ['lastBuild', { value: developerState?[<Link href={'/logging/tasks/' + developerState.task} underline='always'>
-              <InputLabel style={{color:
-                  developerState.status==BuildStatus.InProcess?'blue':developerState.status==BuildStatus.Success?'green':'red',
-                paddingBottom: '4px'}}>
+              <InputLabel className={developerState.status==BuildStatus.Success?
+                  classes.successText:developerState.status==BuildStatus.Failure?classes.failureText:classes.inProcessText}>
                 { (developerState.status==BuildStatus.InProcess?'-> ':'') + developerState.version}
               </InputLabel>
             </Link>]:[] }],
           ['lastClientBuild', { value: clientState?[<Link href={'/logging/tasks/' + clientState.task} underline='always'>
-              <InputLabel style={{color:
-                  clientState.status==BuildStatus.InProcess?'blue':clientState.status==BuildStatus.Success?'green':'red',
-                paddingBottom: '4px'}}>
+              <InputLabel className={clientState.status==BuildStatus.Success?
+                  classes.successText:clientState.status==BuildStatus.Failure?classes.failureText:classes.inProcessText}>
                 { (clientState.status==BuildStatus.InProcess?'-> ':'') + clientState.version}
               </InputLabel>
             </Link>]:[] }],

@@ -70,6 +70,19 @@ const useStyles = makeStyles((theme:any) => ({
   },
   alert: {
     marginTop: 25
+  },
+  successText: {
+    color: "green",
+    paddingBottom: '4px'
+  },
+  failureText: {
+    color: "red",
+    textDecoration: "line-through",
+    paddingBottom: '4px'
+  },
+  inProcessText: {
+    color: "blue",
+    paddingBottom: '4px'
   }
 }));
 
@@ -283,9 +296,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       ['providerVersion', { value: row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):'' }],
       ['developerVersion', { value: row.developerVersion?Version.developerDistributionVersionToString(row.developerVersion):'' }],
       ['lastClientBuild', { value: row.lastClientBuild?[<Link href={'/logging/tasks/' + row.lastClientBuild.task} underline='always'>
-          <InputLabel style={{color:
-              row.lastClientBuild.status==BuildStatus.InProcess?'blue':row.lastClientBuild.status==BuildStatus.Success?'green':'red',
-            paddingBottom: '4px'}}>
+          <InputLabel className={row.lastClientBuild.status==BuildStatus.Success?
+              classes.successText:row.lastClientBuild.status==BuildStatus.Failure?classes.failureText:classes.inProcessText}>
             { (row.lastClientBuild.status==BuildStatus.InProcess?'-> ':'') + row.lastClientBuild.version}
           </InputLabel>
         </Link>]:[] }],

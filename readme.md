@@ -65,7 +65,7 @@
     - [Profiles](#profiles)
     - [Providers](#providers)
   - [Build developer version](#build-developer-version-1)
-  - [Building client versions](#building-client-versions)
+  - [Build client versions](#build-client-versions)
     - [With download from the provider](#with-download-from-the-provider)
     - [Without download from the provider](#without-download-from-the-provider)
     - [Monitoring the build process](#monitoring-the-build-process)
@@ -953,7 +953,11 @@ Among other things, for the provider are determined:
 After the development services are defined, open _Build/Developer_.
 A table of services and their versions will appear:
 - Service - service under development
-- Last Version, Author, Time, Comment - latest version, author and generation time of the service
+- Last Build - last developer version build
+- Client Last Build - last clientr version build
+- Author - author of last developer version build
+- Time - time of last developer version build
+- Comment - comment of last developer version build
 - Status
   - In Process - version is currently being built
   - Completed - build completed
@@ -973,7 +977,7 @@ in real time. You can interrupt the version creation task.
 If a version is currently being created, by selecting an entry, you can view the creation log in
 real time. You can interrupt the version creation task.
 
-## Building client versions
+## Build client versions
 
 Open _Build/Client_ if development services are defined, otherwise _Build_.
 
@@ -985,7 +989,7 @@ If a provider is selected, a table of that provider's services will appear, in r
 - Service - service for installation
 - Provider Desired Version - the desired version of the service from the provider
 - Developer Desired Version - desired developer version on the distribution server
-- Client Desired Version - desired client version
+- Last Client Build - last client version build
 - Tested Developer Version - last tested version
 
 There are already selected services for building for which there are no client versions with the desired version from the provider.
@@ -996,7 +1000,7 @@ Other services cannot be selected for assembly.
 If no provider is selected, the native services described in the 'own' profile are displayed:
 - Service - service for installation to client 
 - Developer Desired Version - desired developer version on the distribution server
-- Client Desired Version - desired client version
+- Last Client Build - last client version build
 
 There are already selected services for assembly for which there are no client versions
 with the desired developer version on the distribution server.
@@ -1111,6 +1115,24 @@ rollback installed versions.
 
 Panels are used to display information from different angles.
 
+### Panel Builds
+
+Designed to monitor active and history of builds.
+
+A table with fields is displayed:
+- Service - service name
+- Version - target build version
+- Author - build author
+- Time - build time
+- Comment - comment to build version
+- Target - build target
+  - DeveloperVersion
+  - ClientVersion
+- Status
+  - InProcess
+  - Success
+  - Failure
+
 ### Panel Versions
 
 Designed to monitor the distribution and operation of service versions.
@@ -1132,13 +1154,3 @@ Otherwise, the first version that does not match in the path is displayed in red
 When _Only Alerts_ is selected, only services with an incomplete distribution path are displayed.
 
 When a consumer is selected, the versions installed on that consumer are displayed.
-
-### Last Developer Versions Panel
-
-The latest released and currently realising versions of the developer are displayed.
-
-### Last Client Versions Panel
-
-The latest released and currently realising versions of the client are displayed.
-
-
