@@ -86,7 +86,7 @@
 
 # Introduction
 
-Vm-update performs versioning, updating, starting and monitoring of services.
+Update-services performs versioning, updating, starting and monitoring of services.
 History storage allows you to roll back changes.
 Centralized storage of log journals and crash reports is convenient for 
 monitoring system performance and troubleshooting errors.
