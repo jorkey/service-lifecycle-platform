@@ -86,16 +86,37 @@
 
 # Introduction
 
-Update-services performs versioning, updating, starting and monitoring of services.
-History storage allows you to roll back changes.
-Centralized storage of log journals and crash reports is convenient for 
-monitoring system performance and troubleshooting errors.
+Application suite with Web dashboard _service-lifecycle-platform_ (further _SLP_) performs 
+building, versioning, running, updating, and monitoring of services.
+
+When building the service, an image file is created with a unique version number.
+The assembly can run on different _SLP_ servers, which allows building services in different environments.
+
+To install service version on a specific client, a new version image is generated, 
+supplemented with the settings and private files of this client.
+
+After generation, the new version will be automatically installed and launched on the server.
+The old service version will be stopped and replaced by the new one.
+It is also possible to roll back to one of the previous versions.
+
+Service logs and fault reports of all services are sent to the _SLP_ distribution server where they are indexed for easy searching.
+
+One of the interesting uses of _SLP_ is installing and updating services on virtual machines (VMs).
+In this case, the VM is created from the image which requires regenerating of VM image when some service is changed.
+With _SLP_ we can make base image for VM and install our services while doing cloud init script.   
+This significantly speeds up the development and debugging of services on VMs.
 
 ## Required platforms
 
-Currently, update-services works on Linux Ubuntu servers.
-Source codes must be in the Git VCS repositories.
-Microsoft Azure cloud service is supported.
+Currently, _SLP_ works on Linux Ubuntu servers.
+This is due to the use of bash scripts for starting and updating services. 
+Scripts are a small part of _SLP_, so support for other platforms will not be difficult.
+
+Service source codes must be in the Git VCS repositories.
+For example on GitHub.
+
+Microsoft Azure cloud service is supported now. 
+Minimal coding required to support other cloud services. 
 
 ## Agreements
 
@@ -134,7 +155,7 @@ logging and crash reporting.
 - Creating a development version of the service
 - Creation of a client version of the service with customization of settings for a specific client
 - Installing/Upgrading a Service Instance
-- Для выполнимых сервисов:
+- For runnable services:
   - Run service instance
   - Writing service logs to database
   - Write service crash reports to database
@@ -283,7 +304,7 @@ Such files are not stored in source repositories, but are uploaded to the distri
 
 # Own Services
 
-Update-services itself consists of services. Thus, update-services creates versions of itself and updates itself.
+_SLP_ itself consists of services. Thus, _SLP_ creates versions of itself and updates itself.
 
 Own services:
 - scripts - Startup and initializing scripts (Shell, YAML)
@@ -319,7 +340,7 @@ Perform initial installation and service upgrades.
 
 ## Distribution Server
 
-The main component of update-services is the distribution server, managed through the Distribution Dashboard.
+The main component of _SLP_ is the distribution server, managed through the Distribution Dashboard.
 New versions of services are created on the distribution server. To create a new version, _distribution_ starts _builder_.
 
 <a name="create_distribution_server"></a>
@@ -331,9 +352,9 @@ The distribution server can be built and installed from source, or from another 
 
 Install data base MongoDB.
 
-Clone source repository update-services to distribution server:
+Clone source repository _SLP_ to distribution server:
 
-`git clone git@github.com:jorkey/update-services.git`
+`git clone git@github.com:jorkey/_SLP_.git`
 
 Execute the command in the repository directory:
 
@@ -479,7 +500,7 @@ _FiniteDuration_ format:
 
 #### GraphQL queries
 
-The distribution server accepts GraphQL requests from users, other update-services services, and other distribution servers.
+The distribution server accepts GraphQL requests from users, other _SLP_ services, and other distribution servers.
 GraphQL queries serve:
   - accounts
   - distribution servers connection settings
@@ -593,7 +614,7 @@ The consumer periodically checks for updates, and when updates are found, runs a
 
 ### Update of distribution server
 
-The distribution server is a update-services service, which means that it is built and updated by general rules.
+The distribution server is a _SLP_ service, which means that it is built and updated by general rules.
 The server periodically checks its current version against the client version in the database,
 and if they differ, restarts. Scripts after the completion of the distribution server install and run
 new version.
@@ -603,7 +624,7 @@ In this case, the scripts update themselves and start the distribution server ag
 
 ### Document history in Mongo DB
 
-All update-services documents are stored in collections of a special format.
+All _SLP_ documents are stored in collections of a special format.
 
 Each document, except for the content part, has additional fields:
 - __sequence_ - sequence number of adding/modifying the document in the collection
@@ -631,7 +652,7 @@ Here:
 - _distributionDir_ - distribution server working directory
 - _distribution_ - distribution server name
 
-Installation and updating is performed by update-services scripts from the distribution server for which the assembly is performed.
+Installation and updating is performed by _SLP_ scripts from the distribution server for which the assembly is performed.
 
 ### Distribution server install
 
@@ -1020,7 +1041,7 @@ assembly is already in progress.
 
 Before installing services on production servers, it is advisable to conduct comprehensive testing.
 In order for services to be installed on working servers only after they are
-tested, update-services has a mechanism to mark the list of service versions as tested.
+tested, _SLP_ has a mechanism to mark the list of service versions as tested.
 
 For example, there is a distribution server named _production_,
 in the configuration of which the test distribution server _test_ is specified.
@@ -1108,8 +1129,8 @@ It is possible to download the ZIP archive of fault report to a file.
 
 ## Dashboard
 
-The _Dashboard_ page is intended for operational control of _update-services_.
-With its, you can see how _update-services_ lives, quickly find possible problems,
+The _Dashboard_ page is intended for operational control of _SLP_.
+With its, you can see how _SLP_ lives, quickly find possible problems,
 rollback installed versions.
 
 Panels are used to display information from different angles.
