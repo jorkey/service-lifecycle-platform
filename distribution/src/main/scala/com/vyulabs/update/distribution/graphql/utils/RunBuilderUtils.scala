@@ -119,6 +119,8 @@ trait RunBuilderUtils extends SprayJsonSupport {
           } yield {
             accountInfo.getOrElse(throw new IOException(s"No consumer account '${distribution}''")).properties.url
           }
+        } else if (config.network.publicUrl.isDefined) {
+          Future(config.network.publicUrl.get)
         } else {
           Future(s"${if (config.network.ssl.isDefined) "https" else "http"}://${config.network.host}:${config.network.port}")
         }
