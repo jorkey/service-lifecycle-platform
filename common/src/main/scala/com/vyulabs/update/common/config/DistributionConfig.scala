@@ -19,7 +19,7 @@ object MongoDbConfig {
 case class NetworkConfig(host: String, port: Int, ssl: Option[SslConfig], publicUrl: Option[String])
 
 object NetworkConfig {
-  implicit val networkConfigJson = jsonFormat3(NetworkConfig.apply)
+  implicit val networkConfigJson = jsonFormat4(NetworkConfig.apply)
 }
 
 case class VersionsConfig(maxHistorySize: Int)
