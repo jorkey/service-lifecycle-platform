@@ -129,7 +129,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         ChildProcess.start("/bin/bash", s"./${Common.BuilderSh}" +: arguments,
           environment.foldLeft(Map.empty[String, String])((m, e) => m + (e.name -> e.value)) +
             ("distribution" -> distribution) +
-            ("distributionUrl" -> distributionUrl) +
+            // ("distributionUrl" -> distributionUrl) +
             ("accessToken" -> accessToken),
           directory.getBuilderDir(distribution))
       }
